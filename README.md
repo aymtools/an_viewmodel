@@ -119,8 +119,8 @@ class _HomeFloatingButtonState extends State<HomeFloatingButton> {
 
 ## Additional information
 
-See [anlifecycle](https://github.com/aymtools/lifecycle/)
+See [anlifecycle](https://pub.dev/packages/anlifecycle)
 
-See [cancelable](https://github.com/aymtools/cancelable/)
+See [cancelable](https://pub.dev/packages/cancellable)
 
-See [an_lifecycle_cancellable](https://github.com/aymtools/lifecycle_cancellable/)
+See [an_lifecycle_cancellable](https://pub.dev/packages/an_lifecycle_cancellable)

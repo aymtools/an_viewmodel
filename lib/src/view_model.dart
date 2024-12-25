@@ -25,6 +25,13 @@ extension ViewModelExt on ViewModel {
     cancellable.onCancel.then((_) => onDispose());
     addCloseable(cancellable);
   }
+
+  /// 生成一个基于viewModel生命周期的cancellable
+  Cancellable makeCloseable() {
+    final closeable = Cancellable();
+    addCloseable(closeable);
+    return closeable;
+  }
 }
 
 extension _ViewModelClean on ViewModel {
@@ -106,13 +113,20 @@ class ViewModelProvider {
 
   ViewModelProvider(this._viewModelStore, this._lifecycle);
 
+  @protected
+  ViewModelStore get viewModelStore => _viewModelStore;
+
+  @protected
+  Lifecycle get lifecycle => _lifecycle;
+
   /// 使用当前的Provider获取或创建一个 ViewModel
-  VM get<VM extends ViewModel>() {
+  VM get<VM extends ViewModel>(
+      {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) {
     final vmKey = VM.toString();
     var vmCache = _viewModelStore.get(vmKey);
     if (vmCache != null && vmCache is VM) return vmCache;
     VM? vm = ViewModelProvider.newInstanceViewModel(_lifecycle,
-        factories: _factoryMap);
+        factories: _factoryMap, factory: factory, factory2: factory2);
     if (vm != null) {
       _viewModelStore.put(vmKey, vm);
       return vm;
@@ -163,9 +177,13 @@ class ViewModelProvider {
           testLifecycleOwner: (owner) => owner.lifecycle.parent == null);
 
   static VM? newInstanceViewModel<VM extends ViewModel>(Lifecycle lifecycle,
-      {Map<Type, Function>? factories}) {
+      {Map<Type, Function>? factories,
+      ViewModelFactory<VM>? factory,
+      ViewModelFactory2<VM>? factory2}) {
     VM? result;
-    if (factories != null) {
+    result = factory?.call();
+    result ??= factory2?.call(lifecycle);
+    if (result == null && factories != null) {
       result = _newInstanceViewModel<VM>(factories, lifecycle);
     }
     result ??= _newInstanceViewModel<VM>(
@@ -190,20 +208,20 @@ extension ViewModelProviderViewModelsExt on ViewModelProvider {
   /// 扩展的get 可提供临时的 ViewModelFactory
   VM viewModels<VM extends ViewModel>(
       {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) {
-    if (factory != null) {
-      addFactory(factory);
-    }
-    if (factory2 != null) {
-      addFactory2(factory2);
-    }
-    return get<VM>();
+    // if (factory != null) {
+    //   addFactory(factory);
+    // }
+    // if (factory2 != null) {
+    //   addFactory2(factory2);
+    // }
+    return get<VM>(factory: factory, factory2: factory2);
   }
 }
 
 extension ViewModelStoreOwnerExtension on LifecycleOwner {
   /// 获取 当前的viewModelStore
   ViewModelStore getViewModelStore() =>
-      lifecycleExtData.putIfAbsent(TypedKey<ViewModelStore>(), () {
+      extData.putIfAbsent(TypedKey<ViewModelStore>(), () {
         final store = ViewModelStore();
         makeLiveCancellable().onCancel.then((_) => store.clear());
         return store;
@@ -213,7 +231,7 @@ extension ViewModelStoreOwnerExtension on LifecycleOwner {
   ViewModelProvider getViewModelProvider() {
     assert(currentLifecycleState > LifecycleState.destroyed,
         'Must be used before destroyed.');
-    return lifecycleExtData.putIfAbsent(TypedKey<ViewModelProvider>(),
+    return extData.putIfAbsent(TypedKey<ViewModelProvider>(),
         () => ViewModelProvider(getViewModelStore(), lifecycle));
   }
 
