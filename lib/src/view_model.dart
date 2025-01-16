@@ -9,6 +9,7 @@ abstract class ViewModel {
   final Set<Cancellable> _closeables = {};
 
   /// 执行清理
+  @protected
   void onCleared() {}
 
   /// 添加一个自动清理的cancellable
@@ -48,33 +49,33 @@ extension _ViewModelClean on ViewModel {
 
 /// ViewModel的Store
 class ViewModelStore {
-  final Map<String, ViewModel> mMap = {};
+  final Map<Object, ViewModel> mMap = {};
 
   /// 放入一个ViewModel 如果已经存在则上一个执行清理
-  void put(String key, ViewModel viewModel) {
-    ViewModel? oldViewModel = mMap[key];
-    mMap[key] = viewModel;
+  void put<T extends ViewModel>(T viewModel) {
+    ViewModel? oldViewModel = mMap[T];
+    mMap[T] = viewModel;
     if (oldViewModel != null) {
       oldViewModel.onCleared();
     }
   }
 
   /// 获取ViewModel
-  ViewModel? get(String key) {
-    return mMap[key];
+  T? get<T extends ViewModel>() {
+    return mMap[T] as T?;
   }
 
   /// 获取ViewModel
-  ViewModel? remove(String key) {
-    ViewModel? oldViewModel = mMap.remove(key);
-    if (oldViewModel != null) {
+  T? remove<T extends ViewModel>() {
+    Object? oldViewModel = mMap.remove(T);
+    if (oldViewModel is ViewModel) {
       oldViewModel.onCleared();
     }
-    return oldViewModel;
+    return oldViewModel as T;
   }
 
   /// 当前已存在的KEY
-  Set<String> keys() {
+  Set<Object> keys() {
     return Set.of(mMap.keys);
   }
 
@@ -123,12 +124,12 @@ class ViewModelProvider {
   VM get<VM extends ViewModel>(
       {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) {
     final vmKey = VM.toString();
-    var vmCache = _viewModelStore.get(vmKey);
-    if (vmCache != null && vmCache is VM) return vmCache;
+    var vmCache = _viewModelStore.get<VM>();
+    if (vmCache != null) return vmCache;
     VM? vm = ViewModelProvider.newInstanceViewModel(_lifecycle,
         factories: _factoryMap, factory: factory, factory2: factory2);
     if (vm != null) {
-      _viewModelStore.put(vmKey, vm);
+      _viewModelStore.put<VM>(vm);
       return vm;
     }
     throw 'cannot find $VM factory';

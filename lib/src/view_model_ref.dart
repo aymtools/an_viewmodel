@@ -15,6 +15,7 @@ class RefViewModelProvider extends ViewModelProvider with ViewModel {
   @override
   ViewModelStore get viewModelStore => super.viewModelStore;
 
+  @protected
   @override
   void onCleared() {
     super.onCleared();
@@ -35,7 +36,7 @@ class RefViewModelProvider extends ViewModelProvider with ViewModel {
     final disposable = _cancellableMap.putIfAbsent(
         VM,
         () => CancellableEvery()
-          ..onCancel.then((value) => viewModelStore.remove(VM.toString())));
+          ..onCancel.then((value) => viewModelStore.remove<VM>()));
 
     disposable.add(lifecycle.makeViewModelCancellable(VM));
     return vm;

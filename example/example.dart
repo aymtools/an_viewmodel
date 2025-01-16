@@ -1,11 +1,10 @@
-import 'package:an_lifecycle_cancellable/an_lifecycle_cancellable.dart';
 import 'package:an_viewmodel/an_viewmodel.dart';
 import 'package:anlifecycle/anlifecycle.dart';
 import 'package:flutter/material.dart';
 
 void main() {
   /// 提前声明 ViewModelHome的创建方式
-  ViewModelProvider.addDefFactory2(ViewModelHome.new);
+  ViewModelProvider.addDefFactory2(HomeViewModel.new);
   runApp(const MyApp());
 }
 
@@ -29,15 +28,23 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class ViewModelHome with ViewModel {
-  final ValueNotifier<int> counter = ValueNotifier<int>(0);
+class GlobalViewModel with ViewModel {
+  final int step = 2;
+}
 
-  ViewModelHome(Lifecycle lifecycle) {
-    counter.bindLifecycle(lifecycle);
-  }
+class HomeViewModel with ViewModel {
+  final GlobalViewModel globalViewModel;
+
+  late final ValueNotifier<int> counter = valueNotifier(0);
+
+  // 通过传入的Lifecycle 获取全局的 GlobalViewModel
+  HomeViewModel(Lifecycle lifecycle)
+      : globalViewModel =
+            lifecycle.viewModelsByApp(factory: GlobalViewModel.new);
 
   void incrementCounter() {
-    counter.value++;
+    // 使用全局配置的步进
+    counter.value = counter.value + globalViewModel.step;
   }
 }
 
@@ -49,20 +56,19 @@ class MyHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 获取当前环境下的ViewModel
-    final ViewModelHome viewModel = context.viewModels();
+    final viewModel = context.viewModels<HomeViewModel>();
 
     // 也可使用 当前提供的构建工厂
-    // final ViewModelHome viewModel =
-    //     context.viewModels(factory2: ViewModelHome.new);
+    // final viewModel = context.viewModels(factory2: HomeViewModel.new);
 
     // 从路由页来缓存 ViewModel
-    // final ViewModelHome viewModel1 = context.viewModelsByRoute();
-
+    // final viewModel = context.viewModelsByRoute<HomeViewModel>();
+    //
     // 从App 全局来缓存 ViewModel
-    // final ViewModelHome viewModel1 = context.viewModelsByApp();
+    // final  viewModel = context.viewModelsByApp<HomeViewModel>();
 
     // 当还有引用时 下次获取依然是同一个 当没有任何引用的时候 会执行清理vm
-    // final ViewModelHome viewModel1 = context.viewModelsByRef();
+    // final viewModel = context.viewModelsByRef<HomeViewModel>();
 
     return Scaffold(
       appBar: AppBar(
@@ -100,7 +106,7 @@ class HomeFloatingButton extends StatefulWidget {
 
 class _HomeFloatingButtonState extends State<HomeFloatingButton> {
   //获取vm   可以在 state中直接使用
-  late final vm = viewModelsOfState<ViewModelHome>();
+  late final vm = viewModelsOfState<HomeViewModel>();
 
   @override
   Widget build(BuildContext context) {

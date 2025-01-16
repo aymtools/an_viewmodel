@@ -7,6 +7,7 @@
 - viewModels(factory,factory2) : Parameters factory and factory2 are no longer automatically added
   to ViewModelProvider to prevent memory leaks
 - viewModelsByRef(factory2) : The lifecycle parameter of factory2 is changed to AppLifecycle
+- ViewModelStore : The key in ViewModelStore has been adjusted to its type.
 
 ## 1.0.0
 

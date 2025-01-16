@@ -39,12 +39,7 @@ to [anlifecycle](https://pub.dev/packages/anlifecycle) for guidance.
 
 
 class ViewModelHome with ViewModel {
-  final ValueNotifier<int> counter = ValueNotifier<int>(0);
-
-  ViewModelHome(Lifecycle lifecycle) {
-    /// Associate the ValueNotifier with the Lifecycle, and automatically call dispose when the lifecycle ends.
-    counter.bindLifecycle(lifecycle);
-  }
+  late final ValueNotifier<int> counter = valueNotifier(0);
 
   void incrementCounter() {
     counter.value++;
@@ -59,9 +54,20 @@ class MyHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Retrieve the ViewModel in the current environment.
-    final ViewModelHome viewModel =
-    context.viewModels(factory2: ViewModelHome.new);
+    // 获取当前环境下的ViewModel
+    final viewModel = context.viewModels<ViewModelHome>();
+
+    // 也可使用 当前提供的构建工厂
+    // final viewModel = context.viewModels(factory: ViewModelHome.new);
+
+    // 从路由页来缓存 ViewModel
+    // final viewModel = context.viewModelsByRoute<ViewModelHome>();
+    //
+    // 从App 全局来缓存 ViewModel
+    // final  viewModel = context.viewModelsByApp<ViewModelHome>();
+
+    // 当还有引用时 下次获取依然是同一个 当没有任何引用的时候 会执行清理vm
+    // final viewModel = context.viewModelsByRef<ViewModelHome>();
 
     return Scaffold(
       appBar: AppBar(
