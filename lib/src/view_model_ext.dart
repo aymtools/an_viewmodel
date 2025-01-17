@@ -67,6 +67,10 @@ extension AsyncDataTypedExt<T extends Object> on AsyncData<T> {
 
   T get data => value;
 
+  T? get valueOrNull => hasData ? value : null;
+
+  T? get dataOrNull => value;
+
   Object get error => (this as AsyncDataError<T>).error;
 
   StackTrace? get stackTrace => (this as AsyncDataError<T>).stackTrace;
@@ -110,16 +114,18 @@ extension AsyncDataNotifierTypedExt<T extends Object>
 
   T get data => value.data;
 
+  T? get dataOrNull => hasData ? data : null;
+
   Object get error => value.error;
 
   StackTrace? get stackTrace => value.stackTrace;
 
-  void when({
-    required void Function() loading,
-    required void Function(T data) value,
-    required void Function(Object error, StackTrace? stackTrace) error,
+  R when<R>({
+    required R Function() loading,
+    required R Function(T data) value,
+    required R Function(Object error, StackTrace? stackTrace) error,
   }) =>
-      this.value.when(loading: loading, value: value, error: error);
+      this.value.when<R>(loading: loading, value: value, error: error);
 
   void toLoading() => value = value._toLoading();
 
@@ -168,10 +174,32 @@ extension ViewModelValueNotifierExt on ViewModel {
       bool? cancelOnError}) {
     final result = valueNotifierAsync<T>(initialData: initialData);
     stream.bindCancellable(makeCloseable()).listen(
-          (event) => result.toValue(event),
-          onError: (error, stackTrace) => result.toError(error, stackTrace),
+          result.toValue,
+          onError: result.toError,
           cancelOnError: cancelOnError,
         );
+    return result;
+  }
+
+  /// 创建一个自管理的 ValueNotifier 数据源为 Future
+  ValueNotifier<T> valueNotifierFuture<T extends Object>(
+      {required Future<T> future, required T initialData, Function? onError}) {
+    final result = valueNotifier(initialData);
+    future
+        .bindCancellable(makeCloseable())
+        .then((event) => result.value = event, onError: onError);
+    return result;
+  }
+
+  /// 创建一个自管理的 ValueNotifier 类型为 AsyncData 数据源为 Future
+  ValueNotifier<AsyncData<T>> valueNotifierAsyncFuture<T extends Object>(
+    Future<T> future, {
+    T? initialData,
+  }) {
+    final result = valueNotifierAsync<T>(initialData: initialData);
+    future
+        .bindCancellable(makeCloseable())
+        .then(result.toValue, onError: result.toError);
     return result;
   }
 }

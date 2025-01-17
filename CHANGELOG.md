@@ -1,6 +1,9 @@
 ## 2.0.0
 
 - Added makeCloseable to provide cancelable based on viewmodel lifecycle.
+- ViewModel adds extensions: valueNotifier, valueNotifierAsync, valueNotifierStream,
+  valueNotifierAsyncStream, valueNotifierFuture, valueNotifierAsyncFuture, to facilitate the rapid
+  construction of ValueNotifiers.
 
 ### Breaking Changes
 
