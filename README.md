@@ -37,37 +37,48 @@ to [anlifecycle](https://pub.dev/packages/anlifecycle) for guidance.
 
 ```dart
 
+class HomeViewModel with ViewModel {
+  final Lifecycle lifecycle;
+  final GlobalViewModel globalViewModel;
 
-class ViewModelHome with ViewModel {
   late final ValueNotifier<int> counter = valueNotifier(0);
+  
+  // 当前页面的停留时间
+  late final ValueNotifier<int> stayed = valueNotifierStream(
+      stream: Stream.periodic(const Duration(seconds: 1), (i) => i)
+          .bindLifecycle(lifecycle, repeatLastOnRestart: true),
+      initialData: 0);
+
+  // 通过传入的Lifecycle 获取全局的 GlobalViewModel
+  HomeViewModel(this.lifecycle) : globalViewModel = lifecycle.viewModelsByApp();
 
   void incrementCounter() {
-    counter.value++;
+    // 使用全局配置的步进
+    counter.value = counter.value + globalViewModel.step;
   }
 }
 
-
-class MyHomePage extends StatelessWidget {
+class HomeViewModelDemo extends StatelessWidget {
   final String title;
 
-  const MyHomePage({super.key, required this.title});
+  const HomeViewModelDemo({super.key, required this.title});
 
   @override
   Widget build(BuildContext context) {
-    // 获取当前环境下的ViewModel
-    final viewModel = context.viewModels<ViewModelHome>();
+    // 使用当前提供的 factory 按需创建 ViewModel
+    final viewModel = context.viewModels(factory2: HomeViewModel.new);
 
-    // 也可使用 当前提供的构建工厂
-    // final viewModel = context.viewModels(factory: ViewModelHome.new);
+    // 如果之前已经提供过 factory 或者已经存在 ViewModel 的实例 可以直接使用
+    // final viewModel = context.viewModels<HomeViewModel>();
 
     // 从路由页来缓存 ViewModel
-    // final viewModel = context.viewModelsByRoute<ViewModelHome>();
+    // final viewModel = context.viewModelsByRoute<HomeViewModel>();
     //
     // 从App 全局来缓存 ViewModel
-    // final  viewModel = context.viewModelsByApp<ViewModelHome>();
+    // final  viewModel = context.viewModelsByApp<HomeViewModel>();
 
     // 当还有引用时 下次获取依然是同一个 当没有任何引用的时候 会执行清理vm
-    // final viewModel = context.viewModelsByRef<ViewModelHome>();
+    // final viewModel = context.viewModelsByRef<HomeViewModel>();
 
     return Scaffold(
       appBar: AppBar(
@@ -77,14 +88,27 @@ class MyHomePage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+
+            /// 如果你更喜欢使用 Hook  [an_lifecycle_hooks](https://pub.dev/packages/an_lifecycle_hooks)
+            ValueListenableBuilder(
+              valueListenable: viewModel.stayed,
+              builder: (context, value, _) =>
+                  Text(
+                    'Stayed on this page for:$value s',
+                  ),
+            ),
+            const Padding(
+              padding: EdgeInsets.only(bottom: 24),
+            ),
             const Text(
               'You have pushed the button this many times:',
             ),
-            AnimatedBuilder(
-              animation: viewModel.counter,
-              builder: (_, __) =>
+
+            ValueListenableBuilder(
+              valueListenable: viewModel.counter,
+              builder: (context, value, _) =>
                   Text(
-                    '${viewModel.counter.value}',
+                    '$value',
                     style: Theme
                         .of(context)
                         .textTheme
@@ -99,7 +123,7 @@ class MyHomePage extends StatelessWidget {
   }
 }
 
-/// Simulate child widgets.
+/// 模拟子控件  可以在 state中直接使用
 class HomeFloatingButton extends StatefulWidget {
   const HomeFloatingButton({super.key});
 
@@ -108,8 +132,8 @@ class HomeFloatingButton extends StatefulWidget {
 }
 
 class _HomeFloatingButtonState extends State<HomeFloatingButton> {
-  //Retrieve the ViewModel in the current environment.
-  late final vm = viewModelsOfState<ViewModelHome>();
+  //获取vm   可以在 state中直接使用
+  late final vm = viewModelsOfState<HomeViewModel>();
 
   @override
   Widget build(BuildContext context) {
