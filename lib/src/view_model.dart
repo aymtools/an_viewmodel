@@ -123,7 +123,6 @@ class ViewModelProvider {
   /// 使用当前的Provider获取或创建一个 ViewModel
   VM get<VM extends ViewModel>(
       {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) {
-    final vmKey = VM.toString();
     var vmCache = _viewModelStore.get<VM>();
     if (vmCache != null) return vmCache;
     VM? vm = ViewModelProvider.newInstanceViewModel(_lifecycle,
