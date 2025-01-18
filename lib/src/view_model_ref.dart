@@ -9,8 +9,7 @@ import 'view_model.dart';
 class RefViewModelProvider extends ViewModelProvider with ViewModel {
   final Map<Type, CancellableEvery> _cancellableMap = {};
 
-  RefViewModelProvider(Lifecycle appLifecycle)
-      : super(ViewModelStore(), appLifecycle);
+  RefViewModelProvider(super.appLifecycle);
 
   @override
   ViewModelStore get viewModelStore => super.viewModelStore;
@@ -38,7 +37,7 @@ class RefViewModelProvider extends ViewModelProvider with ViewModel {
         () => CancellableEvery()
           ..onCancel.then((value) => viewModelStore.remove<VM>()));
 
-    disposable.add(lifecycle.makeViewModelCancellable(VM));
+    disposable.add(lifecycle.makeViewModelCancellable(vm));
     return vm;
   }
 }
@@ -56,8 +55,8 @@ class _ViewModelCancellableKey extends TypedKey<Cancellable> {
 }
 
 extension _LifecycleRefViewModelProviderVMCancellableExt on Lifecycle {
-  Cancellable makeViewModelCancellable(Type key) => extData.putIfAbsent(
-      _ViewModelCancellableKey(key), () => makeLiveCancellable());
+  Cancellable makeViewModelCancellable(ViewModel vm) =>
+      extData.putIfAbsent(key: vm, ifAbsent: () => makeLiveCancellable());
 }
 
 extension ViewModelByRefExt on ILifecycle {

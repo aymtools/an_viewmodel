@@ -108,11 +108,14 @@ class _ViewModelDefFactories {
 
 /// 用来管理如何创建ViewModel
 class ViewModelProvider {
-  final ViewModelStore _viewModelStore;
+  final ViewModelStore _viewModelStore = ViewModelStore();
   final Lifecycle _lifecycle;
   final Map<Type, Function> _factoryMap = {};
 
-  ViewModelProvider(this._viewModelStore, this._lifecycle);
+  ViewModelProvider(this._lifecycle) {
+    _lifecycle.addLifecycleObserver(
+        LifecycleObserver.eventDestroy(_viewModelStore.clear));
+  }
 
   @protected
   ViewModelStore get viewModelStore => _viewModelStore;
@@ -218,21 +221,19 @@ extension ViewModelProviderViewModelsExt on ViewModelProvider {
   }
 }
 
+final _keyViewModelProvider = Object();
+
 extension ViewModelStoreOwnerExtension on LifecycleOwner {
   /// 获取 当前的viewModelStore
-  ViewModelStore getViewModelStore() =>
-      extData.putIfAbsent(TypedKey<ViewModelStore>(), () {
-        final store = ViewModelStore();
-        makeLiveCancellable().onCancel.then((_) => store.clear());
-        return store;
-      });
+  ViewModelStore getViewModelStore() => getViewModelProvider().viewModelStore;
 
   /// 获取当前的 viewModelProvider
   ViewModelProvider getViewModelProvider() {
     assert(currentLifecycleState > LifecycleState.destroyed,
         'Must be used before destroyed.');
-    return extData.putIfAbsent(TypedKey<ViewModelProvider>(),
-        () => ViewModelProvider(getViewModelStore(), lifecycle));
+    return extData.putIfAbsent<ViewModelProvider>(
+        key: _keyViewModelProvider,
+        ifAbsent: () => ViewModelProvider(lifecycle));
   }
 
   /// 查找最近的路由page 级别的 viewModelProvider
