@@ -42,17 +42,17 @@ class RefViewModelProvider extends ViewModelProvider with ViewModel {
   }
 }
 
-class _ViewModelCancellableKey extends TypedKey<Cancellable> {
-  _ViewModelCancellableKey(Type super.key);
-
-  @override
-  int get hashCode => Object.hash(_ViewModelCancellableKey, key);
-
-  @override
-  bool operator ==(Object other) {
-    return other is _ViewModelCancellableKey && key == other.key;
-  }
-}
+// class _ViewModelCancellableKey extends TypedKey<Cancellable> {
+//   _ViewModelCancellableKey(Type super.key);
+//
+//   @override
+//   int get hashCode => Object.hash(_ViewModelCancellableKey, key);
+//
+//   @override
+//   bool operator ==(Object other) {
+//     return other is _ViewModelCancellableKey && key == other.key;
+//   }
+// }
 
 extension _LifecycleRefViewModelProviderVMCancellableExt on Lifecycle {
   Cancellable makeViewModelCancellable(ViewModel vm) =>
