@@ -19,6 +19,24 @@ abstract class ViewModel {
   }
 }
 
+/// 附带 lifecycle 的 ViewModel
+/// 注意 未字母大写 L 表明 Lifecycle
+abstract class ViewModeL extends ViewModel {
+  /// vm 所寄存的 Lifecycle
+  final Lifecycle lifecycle;
+
+  ViewModeL(this.lifecycle) {
+    lifecycle.launchWhenLifecycleStateStarted(
+      cancellable: makeCloseable(),
+      block: (_) => onInit(),
+    );
+  }
+
+  /// 主动触发的初始化事件
+  @protected
+  void onInit() {}
+}
+
 extension ViewModelExt on ViewModel {
   /// 添加一个自动清理的回调
   void onDispose(void Function() onDispose) {

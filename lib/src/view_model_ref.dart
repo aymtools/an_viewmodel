@@ -6,20 +6,18 @@ import 'package:flutter/widgets.dart';
 import 'view_model.dart';
 
 /// 对缓存式的ViewModel提供支持
-class RefViewModelProvider extends ViewModelProvider with ViewModel {
+class RefViewModelProvider extends ViewModelProvider {
   final Map<Type, CancellableEvery> _cancellableMap = {};
 
-  RefViewModelProvider(super.appLifecycle);
+  RefViewModelProvider(super.appLifecycle) {
+    lifecycle
+        .makeLiveCancellable()
+        .onCancel
+        .then((_) => _cancellableMap.clear());
+  }
 
   @override
   ViewModelStore get viewModelStore => super.viewModelStore;
-
-  @protected
-  @override
-  void onCleared() {
-    super.onCleared();
-    _cancellableMap.clear();
-  }
 
   @override
   VM get<VM extends ViewModel>(
@@ -59,6 +57,8 @@ extension _LifecycleRefViewModelProviderVMCancellableExt on Lifecycle {
       extData.putIfAbsent(key: vm, ifAbsent: () => makeLiveCancellable());
 }
 
+final _keyRefViewModelProvider = Object();
+
 extension ViewModelByRefExt on ILifecycle {
   /// 当还有引用时 下次获取依然是同一个 当没有任何引用的时候 会执行清理vm
   /// - factory2 创建的时候使用app lifecycle
@@ -70,8 +70,16 @@ extension ViewModelByRefExt on ILifecycle {
   }
 
   /// 获取 RefViewModelProvider
-  RefViewModelProvider getRefViewModelProvider() =>
-      viewModelsByApp<RefViewModelProvider>(factory2: RefViewModelProvider.new);
+  // RefViewModelProvider getRefViewModelProvider() =>
+  //     viewModelsByApp<RefViewModelProvider>(factory2: RefViewModelProvider.new);
+
+  /// 获取 RefViewModelProvider
+  RefViewModelProvider getRefViewModelProvider() {
+    final appLifecycle = findLifecycleOwner<LifecycleOwnerState>(
+        test: (owner) => owner.lifecycle.parent == null)!;
+    return appLifecycle.extData.getOrPut(
+        key: _keyRefViewModelProvider, ifAbsent: RefViewModelProvider.new);
+  }
 }
 
 extension ViewModelsByRefOfBuildContextExt on BuildContext {
