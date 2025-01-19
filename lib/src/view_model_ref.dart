@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:an_lifecycle_cancellable/an_lifecycle_cancellable.dart';
 import 'package:anlifecycle/anlifecycle.dart';
 import 'package:cancellable/cancellable.dart';
@@ -7,7 +9,7 @@ import 'view_model.dart';
 
 /// 对缓存式的ViewModel提供支持
 class RefViewModelProvider extends ViewModelProvider {
-  final Map<Type, CancellableEvery> _cancellableMap = {};
+  final Map<ViewModel, CancellableEvery> _cancellableMap = HashMap();
 
   RefViewModelProvider(super.appLifecycle) {
     lifecycle
@@ -31,7 +33,7 @@ class RefViewModelProvider extends ViewModelProvider {
     final vm = super.get<VM>(factory: factory, factory2: factory2);
 
     final disposable = _cancellableMap.putIfAbsent(
-        VM,
+        vm,
         () => CancellableEvery()
           ..onCancel.then((value) => viewModelStore.remove<VM>()));
 

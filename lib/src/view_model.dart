@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:an_lifecycle_cancellable/an_lifecycle_cancellable.dart';
 import 'package:anlifecycle/anlifecycle.dart';
 import 'package:cancellable/cancellable.dart';
@@ -6,7 +8,7 @@ import 'package:flutter/widgets.dart';
 /// ViewModel基类
 abstract class ViewModel {
   bool _mCleared = false;
-  final Set<Cancellable> _closeables = {};
+  final Set<Cancellable> _closeables = HashSet();
 
   /// 执行清理
   @protected
@@ -67,7 +69,7 @@ extension _ViewModelClean on ViewModel {
 
 /// ViewModel的Store
 class ViewModelStore {
-  final Map<Object, ViewModel> mMap = {};
+  final Map<Object, ViewModel> mMap = HashMap();
 
   /// 放入一个ViewModel 如果已经存在则上一个执行清理
   void put<T extends ViewModel>(T viewModel) {
@@ -115,7 +117,7 @@ typedef ViewModelFactory2<VM extends ViewModel> = VM Function(Lifecycle);
 class _ViewModelDefFactories {
   static final _ViewModelDefFactories _instance = _ViewModelDefFactories();
 
-  final Map<Type, Function> _factoryMap = {};
+  final Map<Type, Function> _factoryMap = HashMap();
 
   void addFactory<VM extends ViewModel>(ViewModelFactory<VM> factory) =>
       _factoryMap[VM] = factory;
@@ -128,11 +130,13 @@ class _ViewModelDefFactories {
 class ViewModelProvider {
   final ViewModelStore _viewModelStore = ViewModelStore();
   final Lifecycle _lifecycle;
-  final Map<Type, Function> _factoryMap = {};
+  final Map<Type, Function> _factoryMap = HashMap();
 
   ViewModelProvider(this._lifecycle) {
-    _lifecycle.addLifecycleObserver(
-        LifecycleObserver.eventDestroy(_viewModelStore.clear));
+    _lifecycle.addLifecycleObserver(LifecycleObserver.eventDestroy(() {
+      _viewModelStore.clear();
+      _factoryMap.clear();
+    }));
   }
 
   @protected
