@@ -72,7 +72,7 @@ extension AsyncDataTypedExt<T extends Object> on AsyncData<T> {
 
   R when<R>({
     required R Function() loading,
-    required R Function(T data) value,
+    required R Function(T value) value,
     required R Function(Object error, StackTrace? stackTrace) error,
   }) {
     if (this is AsyncDataLoading<T>) {
@@ -89,12 +89,15 @@ extension AsyncDataTypedExt<T extends Object> on AsyncData<T> {
       ? this as AsyncDataLoading<T>
       : AsyncData<T>.loading();
 
-  AsyncData<T> _toValue(T data) => this is AsyncDataValue<T>
-      ? this as AsyncDataValue<T>
-      : AsyncData<T>.value(data);
+  AsyncData<T> _toValue(T value) =>
+      (this is AsyncDataValue<T> && (this as AsyncDataValue<T>).value == value)
+          ? this
+          : AsyncData<T>.value(value);
 
   AsyncData<T> _toError(Object error, [StackTrace? stackTrace]) =>
-      this is AsyncDataError<T>
-          ? this as AsyncDataError<T>
+      (this is AsyncDataError<T> &&
+              (this as AsyncDataError<T>).error == error &&
+              (this as AsyncDataError<T>).stackTrace == stackTrace)
+          ? this
           : AsyncData<T>.error(error, stackTrace);
 }
