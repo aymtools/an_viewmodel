@@ -1,7 +1,6 @@
 library an_viewmodel;
 
 export 'src/ext/value_notifier_ext.dart';
-export 'src/ext/vmL_ext.dart';
 export 'src/ext/vm_ext.dart';
 export 'src/ext/vm_ext_advanced.dart';
 export 'src/ext/vm_ext_merge.dart';
