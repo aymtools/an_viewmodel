@@ -1,6 +1,4 @@
-import 'package:an_viewmodel/src/ext/vm_ext.dart';
-import 'package:an_viewmodel/src/view_model.dart';
-import 'package:flutter/widgets.dart';
+part of 'vm_ext.dart';
 
 class _MergingValueNotifier<T> extends ValueNotifier<T> {
   final Iterable<ValueNotifier> _children;
@@ -21,13 +19,13 @@ class _MergingValueNotifier<T> extends ValueNotifier<T> {
   late void Function() _notifyListeners;
 
   void _notifyListeners1() {
-    value = _merge();
+    super.value = _merge();
   }
 
   void _notifyListeners2() {
     final last = value;
     final curr = _merge();
-    value = curr;
+    super.value = curr;
 
     if (last == curr) {
       /// 如果不同 上面的赋值就会触发 notifyListeners

@@ -7,6 +7,9 @@ import 'package:flutter/widgets.dart';
 import '../view_model.dart';
 import 'value_notifier_ext.dart';
 
+part 'vm_ext_advanced.dart';
+part 'vm_ext_merge.dart';
+
 /// viewModel 销毁时不在可用setValue
 class _ViewModelValueNotifier<T> extends ValueNotifier<T> {
   final Cancellable _cancellable;
@@ -24,9 +27,10 @@ class _ViewModelValueNotifier<T> extends ValueNotifier<T> {
 
 extension ViewModelValueNotifierExt on ViewModel {
   /// 将提供的源 绑定到生命周期
+  /// [bindSource] 是否将当前的值反向赋值到source 默认为true
   @protected
   ValueNotifier<T> valueNotifierSource<T>(ValueNotifier<T> source,
-      {bool autoDisposeSource = true}) {
+      {bool autoDisposeSource = true, bool bindSource = true}) {
     final cancellable = makeCloseable();
     if (autoDisposeSource) {
       source.bindCancellable(cancellable);
@@ -34,7 +38,9 @@ extension ViewModelValueNotifierExt on ViewModel {
     final result = valueNotifier(source.value);
 
     source.addCListener(cancellable, () => result.value = source.value);
-    result.addCListener(cancellable, () => source.value = result.value);
+    if (bindSource) {
+      result.addCListener(cancellable, () => source.value = result.value);
+    }
 
     return result;
   }
