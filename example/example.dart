@@ -81,6 +81,17 @@ class HomeViewModelDemo extends StatelessWidget {
     // 当还有引用时 下次获取依然是同一个 当没有任何引用的时候 会执行清理vm
     // final viewModel = context.viewModelsByRef<HomeViewModel>();
 
+    /// 同时使用当前 context 所在的lifecycle和viewmodel对象 来处理生命周期变化
+    // final viewModel = context.withLifecycleAndViewModelEffect(
+    //   factory2: HomeViewModel.new,
+    //   launchOnFirstStart: (lifecycle, vm) {
+    //     print('launchOnFirstStart');
+    //   },
+    //   repeatOnResumed: (lifecycle, vm) {
+    //     print('repeatOnResumed');
+    //   },
+    // );
+
     return Scaffold(
       appBar: AppBar(
         title: Text(title),

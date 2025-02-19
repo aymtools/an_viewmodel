@@ -1,3 +1,8 @@
+## 2.0.1
+
+- BuildContext.withLifecycleAndViewModelEffect allows executing lifecycle-related functions based on
+  the current context and ViewModel.
+
 ## 2.0.0
 
 - Added makeCloseable to provide cancelable based on viewmodel lifecycle.

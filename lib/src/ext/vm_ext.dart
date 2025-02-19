@@ -7,17 +7,42 @@ import 'package:flutter/widgets.dart';
 import '../view_model.dart';
 import 'value_notifier_ext.dart';
 
+/// viewModel 销毁时不在可用setValue
+class _ViewModelValueNotifier<T> extends ValueNotifier<T> {
+  final Cancellable _cancellable;
+
+  _ViewModelValueNotifier(ViewModel vm, super.value)
+      : _cancellable = vm.makeCloseable();
+
+  @override
+  set value(T newValue) {
+    if (_cancellable.isAvailable) {
+      super.value = newValue;
+    }
+  }
+}
+
 extension ViewModelValueNotifierExt on ViewModel {
   /// 将提供的源 绑定到生命周期
   @protected
-  ValueNotifier<T> valueNotifierSource<T>(ValueNotifier<T> source) {
-    return source..bindCancellable(makeCloseable());
+  ValueNotifier<T> valueNotifierSource<T>(ValueNotifier<T> source,
+      {bool autoDisposeSource = true}) {
+    final cancellable = makeCloseable();
+    if (autoDisposeSource) {
+      source.bindCancellable(cancellable);
+    }
+    final result = valueNotifier(source.value);
+
+    source.addCListener(cancellable, () => result.value = source.value);
+    result.addCListener(cancellable, () => source.value = result.value);
+
+    return result;
   }
 
   /// 创建一个自管理的 ValueNotifier
   @protected
   ValueNotifier<T> valueNotifier<T>(T value) {
-    return valueNotifierSource(ValueNotifier(value));
+    return _ViewModelValueNotifier(this, value);
   }
 
   /// 创建一个自管理的 ValueNotifier 类型为 AsyncData
