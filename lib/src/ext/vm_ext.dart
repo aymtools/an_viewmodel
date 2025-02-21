@@ -9,6 +9,7 @@ import 'value_notifier_ext.dart';
 
 part 'vm_ext_advanced.dart';
 part 'vm_ext_merge.dart';
+part 'vm_stream_ext.dart';
 
 /// viewModel 销毁时不在可用setValue
 class _ViewModelValueNotifier<T> extends ValueNotifier<T> {
@@ -72,7 +73,7 @@ extension ViewModelValueNotifierExt on ViewModel {
       Function? onError,
       bool? cancelOnError}) {
     final result = valueNotifier(initialData);
-    stream.bindCancellable(makeCloseable()).listen(
+    stream.bindViewModel(this).listen(
           (event) => result.value = event,
           onError: onError,
           cancelOnError: cancelOnError,
@@ -85,7 +86,7 @@ extension ViewModelValueNotifierExt on ViewModel {
   ValueNotifier<AsyncData<T>> valueNotifierAsyncStream<T extends Object>(
       {Stream<T>? stream, T? initialData, bool? cancelOnError}) {
     final result = valueNotifierAsync<T>(initialData: initialData);
-    stream?.bindCancellable(makeCloseable()).listen(
+    stream?.bindViewModel(this).listen(
           result.toValue,
           onError: result.toError,
           cancelOnError: cancelOnError,

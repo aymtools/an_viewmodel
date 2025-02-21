@@ -13,6 +13,8 @@ typedef LifecycleAndViewModelEffectTask<VM extends ViewModel> = FutureOr
 
 extension BuildContextWithLifecycleAndViewModelEffectExt on BuildContext {
   ///允许基于当前context和viewmodel执行生命周期相关的函数
+  ///***
+  ///特别说明 task中的Lifecycle是当前context最近的Lifecycle 并非ViewModel所寄存的Lifecycle
   VM withLifecycleAndViewModelEffect<VM extends ViewModel>({
     VM? data,
     VM Function()? factory,
@@ -24,13 +26,13 @@ extension BuildContextWithLifecycleAndViewModelEffectExt on BuildContext {
     LifecycleAndViewModelEffectTask<VM>? repeatOnStarted,
     LifecycleAndViewModelEffectTask<VM>? repeatOnResumed,
     ViewModelProvider Function(LifecycleOwner lifecycleOwner)?
-        viewModelProvider,
+        viewModelProviderProducer,
   }) {
     return withLifecycleEffectData(
       factory2: (lifecycle) => lifecycle.viewModels(
           factory: data == null ? factory : () => data,
           factory2: factory2,
-          viewModelProvider: viewModelProvider),
+          viewModelProviderProducer: viewModelProviderProducer),
       key: _keyLifecycleAndViewModelEffect,
       launchOnFirstCreate: launchOnFirstCreate,
       launchOnFirstStart: launchOnFirstStart,

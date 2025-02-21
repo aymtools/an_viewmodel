@@ -2,6 +2,7 @@
 
 - BuildContext.withLifecycleAndViewModelEffect allows executing lifecycle-related functions based on
   the current context and ViewModel.
+- Optimize the usage of ViewModelProviderProducer.
 
 ## 2.0.0
 
