@@ -1,4 +1,4 @@
-## 2.0.1
+## 2.1.0
 
 - BuildContext.withLifecycleAndViewModelEffect allows executing lifecycle-related functions based on
   the current context and ViewModel.
