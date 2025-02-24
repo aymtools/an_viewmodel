@@ -1,3 +1,7 @@
+## 2.1.1
+
+- Add more proactive notifications to valueNotifierStreamXXX when notifyWhenEquals=true.
+
 ## 2.1.0
 
 - BuildContext.withLifecycleAndViewModelEffect allows executing lifecycle-related functions based on

@@ -1,36 +1,22 @@
 part of 'vm_ext.dart';
 
-class _MergingValueNotifier<T> extends ValueNotifier<T> {
+class _MergingValueNotifier<T> extends _ValueNotifier<T> {
   final Iterable<ValueNotifier> _children;
   final T Function() _merge;
 
   ///
   /// [awayNotify]任何children 发出的 notify 是否 触发当前的 notifyListeners
   /// 即 即使合并后的结果相同 依然发出通知更新
-  _MergingValueNotifier(this._children, this._merge, [bool awayNotify = false])
-      : super(_merge()) {
-    _notifyListeners = awayNotify ? _notifyListeners2 : _notifyListeners1;
-
+  _MergingValueNotifier(ViewModel vm, this._children, this._merge,
+      [bool awayNotify = false])
+      : super(vm, _merge(), awayNotify) {
     for (var c in _children) {
       c.addListener(_notifyListeners);
     }
   }
 
-  late void Function() _notifyListeners;
-
-  void _notifyListeners1() {
+  void _notifyListeners() {
     super.value = _merge();
-  }
-
-  void _notifyListeners2() {
-    final last = value;
-    final curr = _merge();
-    super.value = curr;
-
-    if (last == curr) {
-      /// 如果不同 上面的赋值就会触发 notifyListeners
-      notifyListeners();
-    }
   }
 
   @override
@@ -51,7 +37,8 @@ extension ViewModelValueNotifierMergeExt on ViewModel {
       required ValueNotifier<T2> source2,
       required R Function(T1, T2) merge,
       bool awayNotify = false}) {
-    final source = _MergingValueNotifier<R>(
+    return _MergingValueNotifier<R>(
+      this,
       [
         source1,
         source2,
@@ -62,8 +49,6 @@ extension ViewModelValueNotifierMergeExt on ViewModel {
       ),
       awayNotify,
     );
-
-    return valueNotifierSource(source);
   }
 
   /// 将多个 ValueNotifier 合并
@@ -75,7 +60,8 @@ extension ViewModelValueNotifierMergeExt on ViewModel {
       required ValueNotifier<T3> source3,
       required R Function(T1, T2, T3) merge,
       bool awayNotify = false}) {
-    final source = _MergingValueNotifier<R>(
+    return _MergingValueNotifier<R>(
+      this,
       [
         source1,
         source2,
@@ -88,8 +74,6 @@ extension ViewModelValueNotifierMergeExt on ViewModel {
       ),
       awayNotify,
     );
-
-    return valueNotifierSource(source);
   }
 
   /// 将多个 ValueNotifier 合并
@@ -102,7 +86,8 @@ extension ViewModelValueNotifierMergeExt on ViewModel {
       required ValueNotifier<T4> source4,
       required R Function(T1, T2, T3, T4) merge,
       bool awayNotify = false}) {
-    final source = _MergingValueNotifier<R>(
+    return _MergingValueNotifier<R>(
+      this,
       [
         source1,
         source2,
@@ -117,8 +102,6 @@ extension ViewModelValueNotifierMergeExt on ViewModel {
       ),
       awayNotify,
     );
-
-    return valueNotifierSource(source);
   }
 
   /// 将多个 ValueNotifier 合并
@@ -132,7 +115,8 @@ extension ViewModelValueNotifierMergeExt on ViewModel {
       required ValueNotifier<T5> source5,
       required R Function(T1, T2, T3, T4, T5) merge,
       bool awayNotify = false}) {
-    final source = _MergingValueNotifier<R>(
+    return _MergingValueNotifier<R>(
+      this,
       [
         source1,
         source2,
@@ -149,8 +133,6 @@ extension ViewModelValueNotifierMergeExt on ViewModel {
       ),
       awayNotify,
     );
-
-    return valueNotifierSource(source);
   }
 
   /// 将多个 ValueNotifier 合并
@@ -165,7 +147,8 @@ extension ViewModelValueNotifierMergeExt on ViewModel {
       required ValueNotifier<T6> source6,
       required R Function(T1, T2, T3, T4, T5, T6) merge,
       bool awayNotify = false}) {
-    final source = _MergingValueNotifier<R>(
+    return _MergingValueNotifier<R>(
+      this,
       [
         source1,
         source2,
@@ -184,8 +167,6 @@ extension ViewModelValueNotifierMergeExt on ViewModel {
       ),
       awayNotify,
     );
-
-    return valueNotifierSource(source);
   }
 
   /// 将多个 ValueNotifier 合并
@@ -201,7 +182,8 @@ extension ViewModelValueNotifierMergeExt on ViewModel {
       required ValueNotifier<T7> source7,
       required R Function(T1, T2, T3, T4, T5, T6, T7) merge,
       bool awayNotify = false}) {
-    final source = _MergingValueNotifier<R>(
+    return _MergingValueNotifier<R>(
+      this,
       [
         source1,
         source2,
@@ -222,8 +204,6 @@ extension ViewModelValueNotifierMergeExt on ViewModel {
       ),
       awayNotify,
     );
-
-    return valueNotifierSource(source);
   }
 
   /// 将多个 ValueNotifier 合并
@@ -240,7 +220,8 @@ extension ViewModelValueNotifierMergeExt on ViewModel {
       required ValueNotifier<T8> source8,
       required R Function(T1, T2, T3, T4, T5, T6, T7, T8) merge,
       bool awayNotify = false}) {
-    final source = _MergingValueNotifier<R>(
+    return _MergingValueNotifier<R>(
+      this,
       [
         source1,
         source2,
@@ -263,8 +244,6 @@ extension ViewModelValueNotifierMergeExt on ViewModel {
       ),
       awayNotify,
     );
-
-    return valueNotifierSource(source);
   }
 
   /// 将多个 ValueNotifier 合并
@@ -282,7 +261,8 @@ extension ViewModelValueNotifierMergeExt on ViewModel {
       required ValueNotifier<T9> source9,
       required R Function(T1, T2, T3, T4, T5, T6, T7, T8, T9) merge,
       bool awayNotify = false}) {
-    final source = _MergingValueNotifier<R>(
+    return _MergingValueNotifier<R>(
+      this,
       [
         source1,
         source2,
@@ -307,7 +287,5 @@ extension ViewModelValueNotifierMergeExt on ViewModel {
       ),
       awayNotify,
     );
-
-    return valueNotifierSource(source);
   }
 }

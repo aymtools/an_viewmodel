@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:an_lifecycle_cancellable/an_lifecycle_cancellable.dart';
 import 'package:cancellable/cancellable.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/foundation.dart';
 
 import '../view_model.dart';
 import 'value_notifier_ext.dart';
@@ -12,18 +12,36 @@ part 'vm_ext_merge.dart';
 part 'vm_stream_ext.dart';
 
 /// viewModel 销毁时不在可用setValue
-class _ViewModelValueNotifier<T> extends ValueNotifier<T> {
+class _ValueNotifier<T> extends ChangeNotifier implements ValueNotifier<T> {
   final Cancellable _cancellable;
+  final bool notifyWhenEquals;
+  T _value;
 
-  _ViewModelValueNotifier(ViewModel vm, super.value)
-      : _cancellable = vm.makeCloseable();
+  _ValueNotifier(ViewModel vm, this._value, [this.notifyWhenEquals = false])
+      : _cancellable = vm.makeCloseable() {
+    if (kFlutterMemoryAllocationsEnabled) {
+      ChangeNotifier.maybeDispatchObjectCreation(this);
+    }
+  }
+
+  @override
+  T get value => _value;
 
   @override
   set value(T newValue) {
-    if (_cancellable.isAvailable) {
-      super.value = newValue;
+    if (_cancellable.isUnavailable) return;
+    if (_value == newValue) {
+      if (notifyWhenEquals) {
+        notifyListeners();
+      }
+      return;
     }
+    _value = newValue;
+    notifyListeners();
   }
+
+  @override
+  String toString() => '${describeIdentity(this)}($value)';
 }
 
 extension ViewModelValueNotifierExt on ViewModel {
@@ -49,30 +67,38 @@ extension ViewModelValueNotifierExt on ViewModel {
   /// 创建一个自管理的 ValueNotifier
   @protected
   ValueNotifier<T> valueNotifier<T>(T value) {
-    return _ViewModelValueNotifier(this, value);
+    return _ValueNotifier(this, value);
   }
 
   /// 创建一个自管理的 ValueNotifier 类型为 AsyncData
+  /// [notifyWhenEquals] true 时，只要调用赋值行为就会发出通知
   @protected
   ValueNotifier<AsyncData<T>> valueNotifierAsync<T extends Object>(
-      {T? initialData, Object? error, StackTrace? stackTrace}) {
+      {T? initialData,
+      Object? error,
+      StackTrace? stackTrace,
+      bool notifyWhenEquals = false}) {
     if (initialData != null) {
-      return valueNotifier(AsyncData<T>.value(initialData));
+      return _ValueNotifier(
+          this, AsyncData<T>.value(initialData), notifyWhenEquals);
     } else if (error != null) {
-      return valueNotifier(AsyncData<T>.error(error, stackTrace));
+      return _ValueNotifier(
+          this, AsyncData<T>.error(error, stackTrace), notifyWhenEquals);
     }
-    return valueNotifier(AsyncData<T>.loading());
+    return _ValueNotifier(this, AsyncData<T>.loading(), notifyWhenEquals);
   }
 
   /// 创建一个自管理的 ValueNotifier 数据源为 Stream
   /// onError 为空时 忽略 error 的处理
+  /// [notifyWhenEquals] true 时，只要调用赋值行为就会发出通知 listen event 就会通知
   @protected
   ValueNotifier<T> valueNotifierStream<T extends Object>(
       {required Stream<T> stream,
       required T initialData,
       Function? onError,
-      bool? cancelOnError}) {
-    final result = valueNotifier(initialData);
+      bool? cancelOnError,
+      bool notifyWhenEquals = false}) {
+    final result = _ValueNotifier(this, initialData, notifyWhenEquals);
     stream.bindViewModel(this).listen(
           (event) => result.value = event,
           onError: onError,
@@ -82,10 +108,15 @@ extension ViewModelValueNotifierExt on ViewModel {
   }
 
   /// 创建一个自管理的 ValueNotifier 类型为 AsyncData 数据源为 Stream
+  /// [notifyWhenEquals] true 时，只要调用赋值行为就会发出通知 listen event 就会通知
   @protected
   ValueNotifier<AsyncData<T>> valueNotifierAsyncStream<T extends Object>(
-      {Stream<T>? stream, T? initialData, bool? cancelOnError}) {
-    final result = valueNotifierAsync<T>(initialData: initialData);
+      {Stream<T>? stream,
+      T? initialData,
+      bool? cancelOnError,
+      bool notifyWhenEquals = false}) {
+    final result = valueNotifierAsync<T>(
+        initialData: initialData, notifyWhenEquals: notifyWhenEquals);
     stream?.bindViewModel(this).listen(
           result.toValue,
           onError: result.toError,
@@ -121,27 +152,33 @@ extension ViewModelValueNotifierExt on ViewModel {
 
   /// 创建一个自管理的 ValueNotifier 数据源为 StreamController
   /// onError 为空时 忽略 error 的处理
+  /// [notifyWhenEquals] true 时，只要调用赋值行为就会发出通知 listen event 就会通知
   @protected
   ValueNotifier<T> valueNotifierStreamController<T extends Object>(
           {required StreamController<T> streamController,
           required T initialData,
           Function? onError,
-          bool? cancelOnError}) =>
+          bool? cancelOnError,
+          bool notifyWhenEquals = false}) =>
       valueNotifierStream(
-          stream: streamController.stream.repeatLatest(),
+          stream: streamController.stream,
           initialData: initialData,
           onError: onError,
-          cancelOnError: cancelOnError);
+          cancelOnError: cancelOnError,
+          notifyWhenEquals: notifyWhenEquals);
 
   /// 创建一个自管理的 ValueNotifier 类型为 AsyncData 数据源为 StreamController
+  /// [notifyWhenEquals] true 时，只要调用赋值行为就会发出通知 listen event 就会通知
   @protected
   ValueNotifier<AsyncData<T>>
       valueNotifierAsyncStreamController<T extends Object>(
               {StreamController<T>? streamController,
               T? initialData,
-              bool? cancelOnError}) =>
+              bool? cancelOnError,
+              bool notifyWhenEquals = false}) =>
           valueNotifierAsyncStream(
-              stream: streamController?.stream.repeatLatest(),
+              stream: streamController?.stream,
               initialData: initialData,
-              cancelOnError: cancelOnError);
+              cancelOnError: cancelOnError,
+              notifyWhenEquals: notifyWhenEquals);
 }
