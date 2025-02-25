@@ -12,17 +12,14 @@ part 'vm_ext_merge.dart';
 part 'vm_stream_ext.dart';
 
 /// viewModel 销毁时不在可用setValue
-class _ValueNotifier<T> extends ChangeNotifier implements ValueNotifier<T> {
+class _ValueNotifier<T> extends ValueNotifier<T> {
   final Cancellable _cancellable;
   final bool notifyWhenEquals;
   T _value;
 
   _ValueNotifier(ViewModel vm, this._value, [this.notifyWhenEquals = false])
-      : _cancellable = vm.makeCloseable() {
-    if (kFlutterMemoryAllocationsEnabled) {
-      ChangeNotifier.maybeDispatchObjectCreation(this);
-    }
-  }
+      : _cancellable = vm.makeCloseable(),
+        super(_value);
 
   @override
   T get value => _value;
@@ -39,9 +36,6 @@ class _ValueNotifier<T> extends ChangeNotifier implements ValueNotifier<T> {
     _value = newValue;
     notifyListeners();
   }
-
-  @override
-  String toString() => '${describeIdentity(this)}($value)';
 }
 
 extension ViewModelValueNotifierExt on ViewModel {
