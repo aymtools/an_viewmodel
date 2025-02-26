@@ -11,7 +11,7 @@ part 'vm_ext_advanced.dart';
 part 'vm_ext_merge.dart';
 part 'vm_stream_ext.dart';
 
-/// viewModel 销毁时不在可用setValue
+/// viewModel 销毁时 set value 不在发出通知
 class _ValueNotifier<T> extends ValueNotifier<T> {
   final Cancellable _cancellable;
   final bool notifyWhenEquals;
@@ -26,15 +26,19 @@ class _ValueNotifier<T> extends ValueNotifier<T> {
 
   @override
   set value(T newValue) {
-    if (_cancellable.isUnavailable) return;
-    if (_value == newValue) {
-      if (notifyWhenEquals) {
-        notifyListeners();
+    if (_cancellable.isAvailable) {
+      if (_value == newValue) {
+        if (notifyWhenEquals) {
+          notifyListeners();
+        }
+        return;
       }
-      return;
+      _value = newValue;
+      notifyListeners();
+    } else {
+      // 仅仅赋值不通知
+      _value = newValue;
     }
-    _value = newValue;
-    notifyListeners();
   }
 }
 
