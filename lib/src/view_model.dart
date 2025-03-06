@@ -19,6 +19,10 @@ abstract class ViewModel {
     if (_mCleared) return;
     _closeables.add(closeable);
   }
+
+  /// 开启ViewModel的创建 销毁日志 仅在非release下有效
+  /// 默认为 true
+  static bool printLifecycle = true;
 }
 
 extension ViewModelExt on ViewModel {
@@ -85,6 +89,7 @@ class ViewModelStore {
   void clear() {
     for (ViewModel vm in mMap.values) {
       vm.clear();
+      _debugPrintViewModelCleared(vm);
     }
     mMap.clear();
   }
@@ -203,6 +208,7 @@ class ViewModelProvider {
     VM? result;
     result = factory?.call();
     result ??= factory2?.call(lifecycle);
+    _debugPrintViewModelCreated(result, lifecycle, factory, factory2);
     if (result == null && factories != null) {
       result = _newInstanceViewModel<VM>(factories, lifecycle);
     }
@@ -215,13 +221,37 @@ class ViewModelProvider {
 VM? _newInstanceViewModel<VM extends ViewModel>(
     Map<Type, Function> factories, Lifecycle lifecycle) {
   VM? vm;
-  Function factory = factories[VM] as Function;
+  Function? factory = factories[VM];
   if (factory is ViewModelFactory<VM>) {
     vm = factory();
+    _debugPrintViewModelCreated(vm, lifecycle, factory, null);
   } else if (factory is ViewModelFactory2<VM>) {
     vm = factory(lifecycle);
+    _debugPrintViewModelCreated(vm, lifecycle, null, factory);
   }
   return vm;
+}
+
+void _debugPrintViewModelCreated(ViewModel? vm, Lifecycle lifecycle,
+    ViewModelFactory? factory, ViewModelFactory2? factory2) {
+  assert(() {
+    if (ViewModel.printLifecycle && vm != null) {
+      debugPrint('ViewModel: ${vm.runtimeType}:${vm.hashCode} Created '
+          'By ${lifecycle.owner.runtimeType}${lifecycle.owner.scope ?? ''}:${lifecycle.owner.hashCode}'
+          // 'use factory ${factory ?? factory2 ?? ''}'
+          '');
+    }
+    return true;
+  }());
+}
+
+void _debugPrintViewModelCleared(ViewModel vm) {
+  assert(() {
+    if (ViewModel.printLifecycle) {
+      debugPrint('ViewModel: ${vm.runtimeType}:${vm.hashCode} Cleared');
+    }
+    return true;
+  }());
 }
 
 extension ViewModelProviderViewModelsExt on ViewModelProvider {

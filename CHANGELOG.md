@@ -1,3 +1,7 @@
+## 2.1.3
+
+- Print logs for ViewModel creation and cleanup in non-release mode.
+
 ## 2.1.2
 
 - Upgrading Dependencies.
