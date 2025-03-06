@@ -1,3 +1,7 @@
+## 2.1.2
+
+- Upgrading Dependencies.
+
 ## 2.1.1
 
 - Add more proactive notifications to valueNotifierStreamXXX when notifyWhenEquals=true.

@@ -28,7 +28,7 @@ extension BuildContextWithLifecycleAndViewModelEffectExt on BuildContext {
     ViewModelProvider Function(LifecycleOwner lifecycleOwner)?
         viewModelProviderProducer,
   }) {
-    return withLifecycleEffectData(
+    return withLifecycleAndDataEffect(
       factory2: (lifecycle) => lifecycle.viewModels(
           factory: data == null ? factory : () => data,
           factory2: factory2,
