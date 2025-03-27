@@ -5,6 +5,9 @@ import 'package:anlifecycle/anlifecycle.dart';
 import 'package:cancellable/cancellable.dart';
 import 'package:flutter/widgets.dart';
 
+part 'view_model_core.dart';
+part 'view_model_tools.dart';
+
 /// ViewModel基类
 abstract class ViewModel {
   bool _mCleared = false;
@@ -42,6 +45,7 @@ extension ViewModelExt on ViewModel {
 }
 
 extension _ViewModelClean on ViewModel {
+  // 执行清理
   void clear() {
     if (_mCleared) return;
     _mCleared = true;
@@ -101,18 +105,6 @@ typedef ViewModelFactory<VM extends ViewModel> = VM Function();
 /// ViewModel创建器2
 typedef ViewModelFactory2<VM extends ViewModel> = VM Function(Lifecycle);
 
-class _ViewModelDefFactories {
-  static final _ViewModelDefFactories _instance = _ViewModelDefFactories();
-
-  final Map<Type, Function> _factoryMap = HashMap();
-
-  void addFactory<VM extends ViewModel>(ViewModelFactory<VM> factory) =>
-      _factoryMap[VM] = factory;
-
-  void addFactory2<VM extends ViewModel>(ViewModelFactory2<VM> factory) =>
-      _factoryMap[VM] = factory;
-}
-
 /// ViewModelProvider 的创建器
 typedef ViewModelProviderProducer = ViewModelProvider Function(LifecycleOwner);
 
@@ -136,7 +128,8 @@ class ViewModelProvider {
   Lifecycle get lifecycle => _lifecycle;
 
   /// 使用当前的Provider获取或创建一个 ViewModel
-  VM get<VM extends ViewModel>(
+  /// [lifecycle] 调用时的lifecycle 不一定是寄存的
+  VM getOrCreate<VM extends ViewModel>(Lifecycle lifecycle,
       {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) {
     var vmCache = _viewModelStore.get<VM>();
     if (vmCache != null) return vmCache;
@@ -158,14 +151,17 @@ class ViewModelProvider {
       _factoryMap[VM] = factory;
 
   /// 添加 全局的 创建器1
-  static void addDefFactory<VM extends ViewModel>(
-          ViewModelFactory<VM> factory) =>
-      _ViewModelDefFactories._instance.addFactory<VM>(factory);
+  static void addDefFactory<VM extends ViewModel>(ViewModelFactory<VM> factory,
+          {ViewModelProviderProducer? producer}) =>
+      _ViewModelDefFactories._instance
+          .addFactory<VM>(factory, producer: producer);
 
   /// 添加 全局的 创建器2
   static void addDefFactory2<VM extends ViewModel>(
-          ViewModelFactory2<VM> factory) =>
-      _ViewModelDefFactories._instance.addFactory2<VM>(factory);
+          ViewModelFactory2<VM> factory,
+          {ViewModelProviderProducer? producer}) =>
+      _ViewModelDefFactories._instance
+          .addFactory2<VM>(factory, producer: producer);
 
   static ViewModelProviderProducer? _viewModelProviderProducer;
 
@@ -174,6 +170,11 @@ class ViewModelProvider {
     assert(_viewModelProviderProducer == null,
         'set producerDefault can only be called once.');
     _viewModelProviderProducer = value;
+  }
+
+  static ViewModelProviderProducer get _producerDef {
+    return _viewModelProviderProducer ??
+        (owner) => owner.getViewModelProvider();
   }
 
   /// viewModels的提供者 指定为基于路由 路由页面内唯一
@@ -201,6 +202,8 @@ class ViewModelProvider {
   static void viewModelProviderProducerByApp() =>
       producerDefault = ViewModelProvider.producerByApp;
 
+  /// 使用提供的创建工厂来创建VM 对象
+  /// [lifecycle] viewModel 所寄存的lifecycle
   static VM? newInstanceViewModel<VM extends ViewModel>(Lifecycle lifecycle,
       {Map<Type, Function>? factories,
       ViewModelFactory<VM>? factory,
@@ -252,231 +255,4 @@ void _debugPrintViewModelCleared(ViewModel vm) {
     }
     return true;
   }());
-}
-
-extension ViewModelProviderViewModelsExt on ViewModelProvider {
-  /// 扩展的get 可提供临时的 ViewModelFactory
-  VM viewModels<VM extends ViewModel>(
-      {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) {
-    // if (factory != null) {
-    //   addFactory(factory);
-    // }
-    // if (factory2 != null) {
-    //   addFactory2(factory2);
-    // }
-    return get<VM>(factory: factory, factory2: factory2);
-  }
-}
-
-final _keyViewModelProvider = Object();
-
-extension ViewModelStoreOwnerExtension on LifecycleOwner {
-  /// 获取 当前的viewModelStore
-  ViewModelStore getViewModelStore() => getViewModelProvider().viewModelStore;
-
-  /// 获取当前的 viewModelProvider
-  ViewModelProvider getViewModelProvider() {
-    assert(currentLifecycleState > LifecycleState.destroyed,
-        'Must be used before destroyed.');
-    return extData.putIfAbsent<ViewModelProvider>(
-        key: _keyViewModelProvider,
-        ifAbsent: () => ViewModelProvider(lifecycle));
-  }
-
-  /// 查找最近的路由page 级别的 viewModelProvider
-  ViewModelProvider getViewModelProviderByRoute() =>
-      findViewModelProvider<LifecycleRouteOwnerState>();
-
-  /// 查找最近的App 级别的 viewModelProvider
-  ViewModelProvider getViewModelProviderByApp() =>
-      findViewModelProvider<LifecycleAppOwnerState>(
-          testLifecycleOwner: (owner) => owner.lifecycle.parent == null);
-
-  /// 自定义查找模式 的 viewModelProvider
-  ViewModelProvider findViewModelProvider<LO extends LifecycleOwnerStateMixin>(
-          {bool Function(LO)? testLifecycleOwner}) =>
-      _getViewModelProvider<LO>(testLifecycleOwner: testLifecycleOwner);
-}
-
-extension _ViewModelRegistryExtension on ILifecycleRegistry {
-  ViewModelProvider _getViewModelProvider<LO extends LifecycleOwnerStateMixin>(
-      {bool Function(LO)? testLifecycleOwner}) {
-    final owner = _findLifecycleOwner<LO>(test: testLifecycleOwner);
-    if (owner == null) {
-      throw 'cannot find $LO';
-    }
-    return owner.getViewModelProvider();
-  }
-
-  LO? _findLifecycleOwner<LO extends LifecycleOwnerStateMixin>(
-      {bool Function(LO)? test}) {
-    Lifecycle? life = lifecycle;
-    if (test == null) {
-      while (life != null) {
-        if (life.owner is LO) {
-          return (life.owner as LO);
-        }
-        life = life.parent;
-      }
-      return null;
-    }
-    while (life != null) {
-      if (life.owner is LO && test((life.owner as LO))) {
-        return (life.owner as LO);
-      }
-      life = life.parent;
-    }
-    return null;
-  }
-}
-
-extension ViewModelLifecycleExtension on ILifecycle {
-  /// 获取当前环境下配置下的ViewModel
-  VM viewModels<VM extends ViewModel>({
-    ViewModelFactory<VM>? factory,
-    ViewModelFactory2<VM>? factory2,
-    @Deprecated('use viewModelProviderProducer')
-    ViewModelProvider Function(LifecycleOwner lifecycleOwner)?
-        viewModelProvider,
-    ViewModelProvider Function(LifecycleOwner lifecycleOwner)?
-        viewModelProviderProducer,
-  }) {
-    final ILifecycleRegistry registry = toLifecycleRegistry();
-    final owner = registry._findLifecycleOwner();
-    if (owner == null) {
-      throw 'cannot find LifecycleOwner';
-    }
-    // 兼容一段时间未来移除
-    viewModelProviderProducer ??= viewModelProvider;
-
-    viewModelProviderProducer ??= ViewModelProvider._viewModelProviderProducer;
-    viewModelProviderProducer ??= (owner) => owner.getViewModelProvider();
-
-    return viewModelProviderProducer
-        .call(owner)
-        .viewModels(factory: factory, factory2: factory2);
-  }
-
-  /// 获取基于RoutePage的ViewModel
-  VM viewModelsByRoute<VM extends ViewModel>({
-    ViewModelFactory<VM>? factory,
-    ViewModelFactory2<VM>? factory2,
-  }) =>
-      viewModels(
-          factory: factory,
-          factory2: factory2,
-          viewModelProviderProducer: ViewModelProvider.producerByRoute);
-
-  /// 获取基于App的ViewModel
-  VM viewModelsByApp<VM extends ViewModel>({
-    ViewModelFactory<VM>? factory,
-    ViewModelFactory2<VM>? factory2,
-  }) =>
-      viewModels(
-          factory: factory,
-          factory2: factory2,
-          viewModelProviderProducer: ViewModelProvider.producerByApp);
-
-  /// 自定义按需查找的 ViewModel
-  VM viewModelsByLifecycleOwner<VM extends ViewModel,
-              LO extends LifecycleOwnerStateMixin>(
-          {ViewModelFactory<VM>? factory,
-          ViewModelFactory2<VM>? factory2,
-          bool Function(LO)? testLifecycleOwner}) =>
-      viewModels(
-          factory: factory,
-          factory2: factory2,
-          viewModelProviderProducer: (owner) => owner.findViewModelProvider<LO>(
-              testLifecycleOwner: testLifecycleOwner));
-}
-
-extension ViewModelsOfBuildContextExt on BuildContext {
-  /// 获取最近的指定的 viewModelProvider 可提供的 ViewModel
-  VM viewModels<VM extends ViewModel>({
-    ViewModelFactory<VM>? factory,
-    ViewModelFactory2<VM>? factory2,
-    @Deprecated('use viewModelProviderProducer')
-    ViewModelProvider Function(LifecycleOwner lifecycleOwner)?
-        viewModelProvider,
-    ViewModelProvider Function(LifecycleOwner lifecycleOwner)?
-        viewModelProviderProducer,
-  }) {
-    Lifecycle? lifecycle;
-    assert(() {
-      /// 抑制掉 assert 时的异常
-      try {
-        lifecycle = Lifecycle.of(this);
-      } catch (_) {
-        lifecycle = Lifecycle.of(this, listen: false);
-      }
-      return true;
-    }());
-
-    lifecycle ??= Lifecycle.of(this);
-    return lifecycle!.viewModels(
-        factory: factory,
-        factory2: factory2,
-        viewModelProviderProducer:
-            viewModelProviderProducer ?? viewModelProvider);
-  }
-
-  /// 获取最近的Route提供的 viewModelProvider 来获取 ViewModel
-  VM viewModelsByRoute<VM extends ViewModel>(
-          {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) =>
-      viewModels(
-          factory: factory,
-          factory2: factory2,
-          viewModelProviderProducer: ViewModelProvider.producerByRoute);
-
-  /// 获取基于App的ViewModel
-  VM viewModelsByApp<VM extends ViewModel>(
-          {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) =>
-      viewModels(
-          factory: factory,
-          factory2: factory2,
-          viewModelProviderProducer: ViewModelProvider.producerByApp);
-}
-
-extension ViewModelsState<T extends StatefulWidget> on State<T> {
-  /// 获取最近的指定的 viewModelProvider 可提供的 ViewModel
-  VM viewModelsOfState<VM extends ViewModel>({
-    ViewModelFactory<VM>? factory,
-    ViewModelFactory2<VM>? factory2,
-    @Deprecated('use viewModelProviderProducer')
-    ViewModelProvider Function(LifecycleOwner lifecycleOwner)?
-        viewModelProvider,
-    ViewModelProvider Function(LifecycleOwner lifecycleOwner)?
-        viewModelProviderProducer,
-  }) {
-    if (this is ILifecycleRegistry) {
-      return (this as ILifecycleRegistry).viewModels(
-          factory: factory,
-          factory2: factory2,
-          viewModelProviderProducer:
-              viewModelProviderProducer ?? viewModelProvider);
-    }
-    assert(mounted);
-
-    return context.viewModels(
-        factory: factory,
-        factory2: factory2,
-        viewModelProviderProducer:
-            viewModelProviderProducer ?? viewModelProvider);
-  }
-
-  /// 获取最近的Route提供的 viewModelProvider 来获取 ViewModel
-  VM viewModelsByRouteOfState<VM extends ViewModel>(
-          {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) =>
-      viewModelsOfState(
-          factory: factory,
-          factory2: factory2,
-          viewModelProviderProducer: ViewModelProvider.producerByRoute);
-
-  /// 获取基于App的ViewModel
-  VM viewModelsByAppOfState<VM extends ViewModel>(
-          {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) =>
-      viewModelsOfState(
-          factory: factory,
-          factory2: factory2,
-          viewModelProviderProducer: ViewModelProvider.producerByApp);
 }

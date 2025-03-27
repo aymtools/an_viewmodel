@@ -21,16 +21,12 @@ class RefViewModelProvider extends ViewModelProvider {
   @override
   ViewModelStore get viewModelStore => super.viewModelStore;
 
-  @override
-  VM get<VM extends ViewModel>(
-      {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) {
-    throw 'not implement use [getOrCreate]';
-  }
-
   /// 获取 如果不存在则创建
+  @override
   VM getOrCreate<VM extends ViewModel>(Lifecycle lifecycle,
       {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) {
-    final vm = super.get<VM>(factory: factory, factory2: factory2);
+    final vm =
+        super.getOrCreate<VM>(lifecycle, factory: factory, factory2: factory2);
 
     final disposable = _cancellableMap.putIfAbsent(
         vm,
@@ -40,23 +36,18 @@ class RefViewModelProvider extends ViewModelProvider {
     disposable.add(lifecycle.makeViewModelCancellable(vm));
     return vm;
   }
+
+  /// 缓存式的ViewModel提供支持的提供者
+  static ViewModelProviderProducer get producer =>
+      (owner) => owner.getRefViewModelProvider();
 }
 
-// class _ViewModelCancellableKey extends TypedKey<Cancellable> {
-//   _ViewModelCancellableKey(Type super.key);
-//
-//   @override
-//   int get hashCode => Object.hash(_ViewModelCancellableKey, key);
-//
-//   @override
-//   bool operator ==(Object other) {
-//     return other is _ViewModelCancellableKey && key == other.key;
-//   }
-// }
+final _keyRefViewModelProviderVMCancellable = Object();
 
 extension _LifecycleRefViewModelProviderVMCancellableExt on Lifecycle {
-  Cancellable makeViewModelCancellable(ViewModel vm) =>
-      extData.putIfAbsent(key: vm, ifAbsent: () => makeLiveCancellable());
+  Cancellable makeViewModelCancellable(ViewModel vm) => extData.putIfAbsent(
+      key: _keyRefViewModelProviderVMCancellable,
+      ifAbsent: () => makeLiveCancellable());
 }
 
 final _keyRefViewModelProvider = Object();
@@ -67,13 +58,12 @@ extension ViewModelByRefExt on ILifecycle {
   /// 对于回收不建议使用lifecycle参数 推荐使用VM的 [onCleared] [addCloseable] [onDispose]
   VM viewModelsByRef<VM extends ViewModel>(
       {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) {
-    return getRefViewModelProvider()
-        .getOrCreate(toLifecycle(), factory: factory, factory2: factory2);
+    // toLifecycle().
+    return viewModels(
+        factory: factory,
+        factory2: factory2,
+        viewModelProviderProducer: RefViewModelProvider.producer);
   }
-
-  /// 获取 RefViewModelProvider
-  // RefViewModelProvider getRefViewModelProvider() =>
-  //     viewModelsByApp<RefViewModelProvider>(factory2: RefViewModelProvider.new);
 
   /// 获取 RefViewModelProvider
   RefViewModelProvider getRefViewModelProvider() {

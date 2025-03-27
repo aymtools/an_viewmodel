@@ -9,7 +9,9 @@ class GlobalViewModel with ViewModel {
 
 void main() {
   /// 提前声明 GlobalViewModel 的创建方式
-  ViewModelProvider.addDefFactory(GlobalViewModel.new);
+  /// 并且存放于 app 全局
+  ViewModelProvider.addDefFactory(GlobalViewModel.new,
+      producer: ViewModelProvider.producerByApp);
 
   runApp(const MyApp());
 }
@@ -39,6 +41,8 @@ class HomeViewModel with ViewModel {
   final GlobalViewModel globalViewModel;
 
   late final ValueNotifier<int> counter = valueNotifier(0);
+
+  late final counter2 = (0);
 
   /// 停留计时器
   late final _stayedStream =

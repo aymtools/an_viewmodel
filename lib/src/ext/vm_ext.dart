@@ -180,3 +180,9 @@ extension ViewModelValueNotifierExt on ViewModel {
               cancelOnError: cancelOnError,
               notifyWhenEquals: notifyWhenEquals);
 }
+
+extension ViewModelValueNotifierCallExt on ViewModel {
+  ValueNotifier<T> call<T>(T data) {
+    return valueNotifier(data);
+  }
+}
