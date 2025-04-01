@@ -50,6 +50,7 @@ extension _ViewModelClean on ViewModel {
     }
     _closeables.clear();
     onCleared();
+    _debugPrintViewModelCleared(this);
   }
 }
 
@@ -62,7 +63,7 @@ class ViewModelStore {
     ViewModel? oldViewModel = mMap[T];
     mMap[T] = viewModel;
     if (oldViewModel != null) {
-      oldViewModel.onCleared();
+      oldViewModel.clear();
     }
   }
 
@@ -75,7 +76,7 @@ class ViewModelStore {
   T? remove<T extends ViewModel>() {
     Object? oldViewModel = mMap.remove(T);
     if (oldViewModel is ViewModel) {
-      oldViewModel.onCleared();
+      oldViewModel.clear();
     }
     return oldViewModel as T;
   }
@@ -87,9 +88,10 @@ class ViewModelStore {
 
   ///Clears internal storage and notifies ViewModels that they are no longer used.
   void clear() {
-    for (ViewModel vm in mMap.values) {
-      vm.clear();
-      _debugPrintViewModelCleared(vm);
+    if (mMap.isNotEmpty) {
+      for (ViewModel vm in [...mMap.values]) {
+        vm.clear();
+      }
     }
     mMap.clear();
   }

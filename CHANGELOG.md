@@ -1,3 +1,7 @@
+## 2.1.4
+
+- Fix the bug of clearing the ViewModel when removing from ViewModelStore.
+
 ## 2.1.3
 
 - Print logs for ViewModel creation and cleanup in non-release mode.
