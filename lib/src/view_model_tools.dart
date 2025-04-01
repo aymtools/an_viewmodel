@@ -1,5 +1,35 @@
 part of 'view_model.dart';
 
+///  定义查找器
+typedef ViewModels<VM extends ViewModel> = VM Function(
+    ViewModelFactory<VM>? factory,
+    ViewModelFactory2<VM>? factory2,
+    ViewModelProvider Function(LifecycleOwner lifecycleOwner)?
+        viewModelProviderProducer);
+
+extension ViewModelViewModelsExt on ViewModel {
+  /// 可以从当前viewModel 继续查找可用的View Model
+  VM viewModels<VM extends ViewModel>(
+      {ViewModelFactory<VM>? factory,
+      ViewModelFactory2<VM>? factory2,
+      ViewModelProvider Function(LifecycleOwner lifecycleOwner)?
+          viewModelProviderProducer}) {
+    return _viewModels!.call(factory, factory2, viewModelProviderProducer)
+        as VM;
+  }
+
+  VM viewModelsByRoute<VM extends ViewModel>(
+      {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) {
+    return _viewModels!.call(factory, factory2, ViewModel.producer.byRoute)
+        as VM;
+  }
+
+  VM viewModelsByApp<VM extends ViewModel>(
+      {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) {
+    return _viewModels!.call(factory, factory2, ViewModel.producer.byApp) as VM;
+  }
+}
+
 final _keyViewModelProvider = Object();
 
 extension ViewModelStoreOwnerExtension on LifecycleOwner {
@@ -82,12 +112,13 @@ extension ViewModelLifecycleExtension on ILifecycle {
     // 兼容一段时间未来移除
     viewModelProviderProducer ??= viewModelProvider;
 
-    viewModelProviderProducer ??= ViewModelProvider._producerDef;
+    viewModelProviderProducer ??= ViewModel.producer._default;
 
     final producer =
         _ViewModelDefFactories._getProducer<VM>(viewModelProviderProducer);
 
     assert(() {
+      if (ViewModel.doNotAssertProviderProducer) return true;
       if (producer == viewModelProviderProducer) return true;
       var tmp1 = producer.call(owner);
       var tmp2 = viewModelProviderProducer?.call(owner);
@@ -107,7 +138,7 @@ extension ViewModelLifecycleExtension on ILifecycle {
       viewModels(
           factory: factory,
           factory2: factory2,
-          viewModelProviderProducer: ViewModelProvider.producerByRoute);
+          viewModelProviderProducer: ViewModel.producer.byRoute);
 
   /// 获取基于App的ViewModel
   VM viewModelsByApp<VM extends ViewModel>({
@@ -117,7 +148,7 @@ extension ViewModelLifecycleExtension on ILifecycle {
       viewModels(
           factory: factory,
           factory2: factory2,
-          viewModelProviderProducer: ViewModelProvider.producerByApp);
+          viewModelProviderProducer: ViewModel.producer.byApp);
 
   /// 自定义按需查找的 ViewModel
   VM viewModelsByLifecycleOwner<VM extends ViewModel,
@@ -168,7 +199,7 @@ extension ViewModelsOfBuildContextExt on BuildContext {
       viewModels(
           factory: factory,
           factory2: factory2,
-          viewModelProviderProducer: ViewModelProvider.producerByRoute);
+          viewModelProviderProducer: ViewModel.producer.byRoute);
 
   /// 获取基于App的ViewModel
   VM viewModelsByApp<VM extends ViewModel>(
@@ -176,7 +207,7 @@ extension ViewModelsOfBuildContextExt on BuildContext {
       viewModels(
           factory: factory,
           factory2: factory2,
-          viewModelProviderProducer: ViewModelProvider.producerByApp);
+          viewModelProviderProducer: ViewModel.producer.byApp);
 }
 
 extension ViewModelsState<T extends StatefulWidget> on State<T> {
@@ -212,7 +243,7 @@ extension ViewModelsState<T extends StatefulWidget> on State<T> {
       viewModelsOfState(
           factory: factory,
           factory2: factory2,
-          viewModelProviderProducer: ViewModelProvider.producerByRoute);
+          viewModelProviderProducer: ViewModel.producer.byRoute);
 
   /// 获取基于App的ViewModel
   VM viewModelsByAppOfState<VM extends ViewModel>(
@@ -220,5 +251,5 @@ extension ViewModelsState<T extends StatefulWidget> on State<T> {
       viewModelsOfState(
           factory: factory,
           factory2: factory2,
-          viewModelProviderProducer: ViewModelProvider.producerByApp);
+          viewModelProviderProducer: ViewModel.producer.byApp);
 }

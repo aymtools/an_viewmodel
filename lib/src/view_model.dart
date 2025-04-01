@@ -5,6 +5,7 @@ import 'package:anlifecycle/anlifecycle.dart';
 import 'package:cancellable/cancellable.dart';
 import 'package:flutter/widgets.dart';
 
+part 'view_model_companion.dart';
 part 'view_model_core.dart';
 part 'view_model_tools.dart';
 
@@ -12,6 +13,11 @@ part 'view_model_tools.dart';
 abstract class ViewModel {
   bool _mCleared = false;
   final Set<Cancellable> _closeables = HashSet();
+  late final ViewModels? _viewModels;
+
+  /// 调用完构造函数之后调用 初始化创建
+  @protected
+  void onCreate() {}
 
   /// 执行清理
   @protected
@@ -26,6 +32,19 @@ abstract class ViewModel {
   /// 开启ViewModel的创建 销毁日志 仅在非release下有效
   /// 默认为 true
   static bool printLifecycle = true;
+
+  /// 不要每次使用 assert 去检查 ProviderProducer 的合法性 自动使用第一次注册的 默认值为false
+  ///  仅在非release下有效 release模式下，默认就是使用第一次注册的
+  /// 为了保证v2升级到v3 未来移除
+  static bool doNotAssertProviderProducer = false;
+
+  /// 用来快速定位 viewModelProviderProducer 的提供者 保证唯一性 提升性能
+  static const ViewModelProviderProducerCompanion producer =
+      ViewModelProviderProducerCompanion._();
+
+  /// 用来注册viewModel的 创建器 和默认寄存位置
+  static const ViewModelFactoriesCompanion factories =
+      ViewModelFactoriesCompanion._();
 }
 
 extension ViewModelExt on ViewModel {
@@ -107,9 +126,6 @@ typedef ViewModelFactory<VM extends ViewModel> = VM Function();
 /// ViewModel创建器2
 typedef ViewModelFactory2<VM extends ViewModel> = VM Function(Lifecycle);
 
-/// ViewModelProvider 的创建器
-typedef ViewModelProviderProducer = ViewModelProvider Function(LifecycleOwner);
-
 /// 用来管理如何创建ViewModel
 class ViewModelProvider {
   final ViewModelStore _viewModelStore = ViewModelStore();
@@ -152,57 +168,7 @@ class ViewModelProvider {
   void addFactory2<VM extends ViewModel>(ViewModelFactory2<VM> factory) =>
       _factoryMap[VM] = factory;
 
-  /// 添加 全局的 创建器1
-  static void addDefFactory<VM extends ViewModel>(ViewModelFactory<VM> factory,
-          {ViewModelProviderProducer? producer}) =>
-      _ViewModelDefFactories._instance
-          .addFactory<VM>(factory, producer: producer);
-
-  /// 添加 全局的 创建器2
-  static void addDefFactory2<VM extends ViewModel>(
-          ViewModelFactory2<VM> factory,
-          {ViewModelProviderProducer? producer}) =>
-      _ViewModelDefFactories._instance
-          .addFactory2<VM>(factory, producer: producer);
-
   static ViewModelProviderProducer? _viewModelProviderProducer;
-
-  /// 设置默认的viewModels的提供者 的创建方式
-  static set producerDefault(ViewModelProviderProducer value) {
-    assert(_viewModelProviderProducer == null,
-        'set producerDefault can only be called once.');
-    _viewModelProviderProducer = value;
-  }
-
-  static ViewModelProviderProducer get _producerDef {
-    return _viewModelProviderProducer ??
-        (owner) => owner.getViewModelProvider();
-  }
-
-  /// viewModels的提供者 指定为基于路由 路由页面内唯一
-  static ViewModelProviderProducer get producerByRoute =>
-      (owner) => owner.getViewModelProviderByRoute();
-
-  /// viewModels的提供者 基于App app内唯一
-  static ViewModelProviderProducer get producerByApp =>
-      (owner) => owner.getViewModelProviderByApp();
-
-  /// 设置默认的viewModels的提供者 的创建方式
-  @Deprecated('use set producerDefault')
-  static void viewModelProviderProducer<LO extends LifecycleOwnerStateMixin>(
-          {bool Function(LO)? testLifecycleOwner}) =>
-      producerDefault = (owner) => owner.findViewModelProvider<LO>(
-          testLifecycleOwner: testLifecycleOwner);
-
-  /// 设置默认的viewModels的提供者 指定为基于路由 路由页面内唯一
-  @Deprecated('use set producerDefault')
-  static void viewModelProviderProducerByRoute() =>
-      producerDefault = ViewModelProvider.producerByRoute;
-
-  /// 设置默认的viewModels的提供者 基于App app内唯一
-  @Deprecated('use set producerDefault')
-  static void viewModelProviderProducerByApp() =>
-      producerDefault = ViewModelProvider.producerByApp;
 
   /// 使用提供的创建工厂来创建VM 对象
   /// [lifecycle] viewModel 所寄存的lifecycle
@@ -219,6 +185,12 @@ class ViewModelProvider {
     }
     result ??= _newInstanceViewModel<VM>(
         _ViewModelDefFactories._instance._factoryMap, lifecycle);
+
+    if (result != null) {
+      result._viewModels = (f1, f2, p) => lifecycle.viewModels(
+          factory: f1, factory2: f2, viewModelProviderProducer: p);
+      result.onCreate();
+    }
     return result;
   }
 }

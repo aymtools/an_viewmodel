@@ -36,10 +36,6 @@ class RefViewModelProvider extends ViewModelProvider {
     disposable.add(lifecycle.makeViewModelCancellable(vm));
     return vm;
   }
-
-  /// 缓存式的ViewModel提供支持的提供者
-  static ViewModelProviderProducer get producer =>
-      (owner) => owner.getRefViewModelProvider();
 }
 
 final _keyRefViewModelProviderVMCancellable = Object();
@@ -48,6 +44,13 @@ extension _LifecycleRefViewModelProviderVMCancellableExt on Lifecycle {
   Cancellable makeViewModelCancellable(ViewModel vm) => extData.putIfAbsent(
       key: _keyRefViewModelProviderVMCancellable,
       ifAbsent: () => makeLiveCancellable());
+}
+
+extension ViewModelProviderProducerConfigRefExt
+    on ViewModelProviderProducerCompanion {
+  /// 缓存式的ViewModel提供支持的提供者
+  ViewModelProviderProducer get byRef =>
+      (owner) => owner.getRefViewModelProvider();
 }
 
 final _keyRefViewModelProvider = Object();
@@ -62,7 +65,7 @@ extension ViewModelByRefExt on ILifecycle {
     return viewModels(
         factory: factory,
         factory2: factory2,
-        viewModelProviderProducer: RefViewModelProvider.producer);
+        viewModelProviderProducer: ViewModel.producer.byRef);
   }
 
   /// 获取 RefViewModelProvider

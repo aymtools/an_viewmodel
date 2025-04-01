@@ -10,7 +10,7 @@ class _ViewModelDefFactories {
       {ViewModelProviderProducer? producer}) {
     _factoryMap[VM] = factory;
     if (producer != null) {
-      setViewModelProviderProducer(producer);
+      registerViewModelProviderProducer(producer);
     }
   }
 
@@ -18,11 +18,11 @@ class _ViewModelDefFactories {
       {ViewModelProviderProducer? producer}) {
     _factoryMap[VM] = factory;
     if (producer != null) {
-      setViewModelProviderProducer(producer);
+      registerViewModelProviderProducer(producer);
     }
   }
 
-  void setViewModelProviderProducer<VM extends ViewModel>(
+  void registerViewModelProviderProducer<VM extends ViewModel>(
       ViewModelProviderProducer producer) {
     assert(!_producerMap.containsKey(VM));
     _producerMap[VM] = producer;

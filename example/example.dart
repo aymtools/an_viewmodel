@@ -10,8 +10,8 @@ class GlobalViewModel with ViewModel {
 void main() {
   /// 提前声明 GlobalViewModel 的创建方式
   /// 并且存放于 app 全局
-  ViewModelProvider.addDefFactory(GlobalViewModel.new,
-      producer: ViewModelProvider.producerByApp);
+  ViewModel.factories
+      .addFactory(GlobalViewModel.new, producer: ViewModel.producer.byApp);
 
   runApp(const MyApp());
 }
@@ -38,7 +38,9 @@ class MyApp extends StatelessWidget {
 
 class HomeViewModel with ViewModel {
   final Lifecycle lifecycle;
-  final GlobalViewModel globalViewModel;
+
+  /// 可自动获取 当前scope 或者更上层scope 中的 ViewModel
+  late final GlobalViewModel globalViewModel = viewModels();
 
   late final ValueNotifier<int> counter = valueNotifier(0);
 
@@ -55,7 +57,7 @@ class HomeViewModel with ViewModel {
       valueNotifierStream(stream: _stayedStream, initialData: 0);
 
   // 通过传入的Lifecycle 获取全局的 GlobalViewModel
-  HomeViewModel(this.lifecycle) : globalViewModel = lifecycle.viewModelsByApp();
+  HomeViewModel(this.lifecycle);
 
   void incrementCounter() {
     // 使用全局配置的步进
