@@ -6,7 +6,9 @@ import 'package:cancellable/cancellable.dart';
 import 'package:flutter/widgets.dart';
 
 part 'view_model_companion.dart';
+
 part 'view_model_core.dart';
+
 part 'view_model_tools.dart';
 
 /// ViewModel基类
@@ -169,6 +171,16 @@ class ViewModelProvider {
       _factoryMap[VM] = factory;
 
   static ViewModelProviderProducer? _viewModelProviderProducer;
+
+  /// viewModels的提供者 指定为基于路由 路由页面内唯一
+  @Deprecated('use ViewModel.producer.byRoute , v3.0.0')
+  static ViewModelProviderProducer get producerByRoute =>
+      ViewModel.producer.byRoute;
+
+  /// viewModels的提供者 基于App app内唯一
+  @Deprecated('use ViewModel.producer.byApp , v3.0.0')
+  static ViewModelProviderProducer get producerByApp =>
+      ViewModel.producer.byApp;
 
   /// 使用提供的创建工厂来创建VM 对象
   /// [lifecycle] viewModel 所寄存的lifecycle

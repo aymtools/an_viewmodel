@@ -10,7 +10,7 @@ class _ViewModelDefFactories {
       {ViewModelProviderProducer? producer}) {
     _factoryMap[VM] = factory;
     if (producer != null) {
-      registerViewModelProviderProducer(producer);
+      registerViewModelProviderProducer<VM>(producer);
     }
   }
 
@@ -18,13 +18,15 @@ class _ViewModelDefFactories {
       {ViewModelProviderProducer? producer}) {
     _factoryMap[VM] = factory;
     if (producer != null) {
-      registerViewModelProviderProducer(producer);
+      registerViewModelProviderProducer<VM>(producer);
     }
   }
 
   void registerViewModelProviderProducer<VM extends ViewModel>(
       ViewModelProviderProducer producer) {
-    assert(!_producerMap.containsKey(VM));
+    assert(VM != ViewModel, 'Please register the subclass of ViewModel.');
+    assert(!_producerMap.containsKey(VM),
+        'The Producer for the ViewModel already exists.');
     _producerMap[VM] = producer;
   }
 
