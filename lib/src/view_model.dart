@@ -38,6 +38,7 @@ abstract class ViewModel {
   /// 不要每次使用 assert 去检查 ProviderProducer 的合法性 自动使用第一次注册的 默认值为false
   ///  仅在非release下有效 release模式下，默认就是使用第一次注册的
   /// 为了保证v2升级到v3 未来移除
+  @Deprecated('will remove , v3.0.0')
   static bool doNotAssertProviderProducer = false;
 
   /// 用来快速定位 viewModelProviderProducer 的提供者 保证唯一性 提升性能

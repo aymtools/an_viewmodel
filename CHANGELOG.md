@@ -1,3 +1,10 @@
+## 3.0.0
+
+- Add to remember the ViewModelProviderProducer when creating the ViewModel, ensuring the same
+  behavior for subsequent automatic creations.
+- ViewModel.doNotAssertProviderProducer is used for compatibility when upgrading from v2 to v3, to
+  prevent asserting and checking the validity of the ProviderProducer.
+
 ## 2.1.4
 
 - Fix the bug of clearing the ViewModel when removing from ViewModelStore.
