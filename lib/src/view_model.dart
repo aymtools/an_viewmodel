@@ -18,8 +18,9 @@ abstract class ViewModel {
   late final ViewModels? _viewModels;
 
   /// 调用完构造函数之后调用 初始化创建
+  /// [lifecycle] 当前ViewModel所寄存的 lifecycle
   @protected
-  void onCreate() {}
+  void onCreate(Lifecycle lifecycle) {}
 
   /// 执行清理
   @protected
@@ -202,7 +203,7 @@ class ViewModelProvider {
     if (result != null) {
       result._viewModels = (f1, f2, p) => lifecycle.viewModels(
           factory: f1, factory2: f2, viewModelProviderProducer: p);
-      result.onCreate();
+      result.onCreate(lifecycle);
     }
     return result;
   }
