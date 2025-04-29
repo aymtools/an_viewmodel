@@ -18,13 +18,13 @@ dependencies:
     sdk: flutter
 
 
-  cancellable: ^2.0.1
-  anlifecycle: ^3.1.0
-  an_lifecycle_cancellable: ^2.1.0
+  cancellable: ^2.2.1
+  anlifecycle: ^3.1.4
+  an_lifecycle_cancellable: ^2.3.1
   weak_collections: ^1.2.1
 
 dev_dependencies:
-  flutter_lints: ^4.0.0
+  flutter_lints: ^5.0.0
 
 
 flutter:

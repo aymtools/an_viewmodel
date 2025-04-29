@@ -6,15 +6,13 @@ import 'package:cancellable/cancellable.dart';
 import 'package:flutter/widgets.dart';
 
 part 'view_model_companion.dart';
-
 part 'view_model_core.dart';
-
 part 'view_model_tools.dart';
 
 /// ViewModel基类
 abstract class ViewModel {
-  bool _mCleared = false;
-  final Set<Cancellable> _closeables = HashSet();
+  // bool _mCleared = false;
+  final Cancellable _cancellable = Cancellable();
   late final ViewModels? _viewModels;
 
   /// 调用完构造函数之后调用 初始化创建
@@ -27,9 +25,10 @@ abstract class ViewModel {
   void onCleared() {}
 
   /// 添加一个自动清理的cancellable
+  @Deprecated('use makeLiveCancellable')
   void addCloseable(Cancellable closeable) {
-    if (_mCleared) return;
-    _closeables.add(closeable);
+    if (_cancellable.isUnavailable) return;
+    _cancellable.onCancel.then(closeable.cancel);
   }
 
   /// 开启ViewModel的创建 销毁日志 仅在非release下有效
@@ -54,28 +53,21 @@ abstract class ViewModel {
 extension ViewModelExt on ViewModel {
   /// 添加一个自动清理的回调
   void onDispose(void Function() onDispose) {
-    Cancellable cancellable = Cancellable();
-    cancellable.onCancel.then((_) => onDispose());
-    addCloseable(cancellable);
+    makeLiveCancellable().onCancel.then((_) => onDispose());
   }
 
   /// 生成一个基于viewModel生命周期的cancellable
-  Cancellable makeCloseable() {
-    final closeable = Cancellable();
-    addCloseable(closeable);
-    return closeable;
-  }
+  Cancellable makeCloseable() => makeLiveCancellable();
+
+  Cancellable makeLiveCancellable({Cancellable? other}) => _cancellable
+      .makeCancellable(father: other, infectious: false, weakRef: false);
 }
 
 extension _ViewModelClean on ViewModel {
   // 执行清理
   void clear() {
-    if (_mCleared) return;
-    _mCleared = true;
-    for (Cancellable c in _closeables) {
-      c.cancel();
-    }
-    _closeables.clear();
+    if (_cancellable.isUnavailable) return;
+    _cancellable.cancel();
     onCleared();
     _debugPrintViewModelCleared(this);
   }
