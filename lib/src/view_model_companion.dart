@@ -49,6 +49,7 @@ extension ViewModelCompanionCoreExt on ViewModelFactoriesCompanion {
 
   void registerViewModelProviderProducer<VM extends ViewModel>(
       ViewModelProviderProducer producer) {
-    _ViewModelDefFactories._instance.registerViewModelProviderProducer<VM>(producer);
+    _ViewModelDefFactories._instance
+        .registerViewModelProviderProducer<VM>(producer);
   }
 }

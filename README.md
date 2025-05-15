@@ -40,6 +40,8 @@ to [anlifecycle](https://pub.dev/packages/anlifecycle) for guidance.
 class HomeViewModel with ViewModel {
   final Lifecycle lifecycle;
   final GlobalViewModel globalViewModel;
+  // 如果已经创建过 或者注册过factory 可直接使用
+  // late final GlobalViewModel globalViewModel = viewModels();
 
   late final ValueNotifier<int> counter = valueNotifier(0);
 

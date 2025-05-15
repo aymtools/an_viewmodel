@@ -118,6 +118,7 @@ extension ViewModelLifecycleExtension on ILifecycle {
         _ViewModelDefFactories._getProducer<VM>(viewModelProviderProducer);
 
     assert(() {
+      // ignore: deprecated_member_use
       if (ViewModel.doNotAssertProviderProducer) return true;
       if (producer == viewModelProviderProducer) return true;
       var tmp1 = producer.call(owner);

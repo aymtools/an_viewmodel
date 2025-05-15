@@ -181,8 +181,8 @@ extension ViewModelValueNotifierExt on ViewModel {
               notifyWhenEquals: notifyWhenEquals);
 }
 
-extension ViewModelValueNotifierCallExt on ViewModel {
-  ValueNotifier<T> call<T>(T data) {
-    return valueNotifier(data);
-  }
-}
+// extension ViewModelValueNotifierCallExt on ViewModel {
+//   ValueNotifier<T> call<T>(T data) {
+//     return valueNotifier(data);
+//   }
+// }

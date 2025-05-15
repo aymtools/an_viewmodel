@@ -44,12 +44,10 @@ class HomeViewModel with ViewModel {
 
   late final ValueNotifier<int> counter = valueNotifier(0);
 
-  late final counter2 = (0);
-
   /// 停留计时器
   late final _stayedStream =
       Stream.periodic(const Duration(seconds: 1), (i) => i)
-          .bindLifecycle(lifecycle, repeatLastOnRestart: true)
+          .bindLifecycle(lifecycle, repeatLastOnStateAtLeast: true)
           .repeatLatest();
 
   // 当前页面的停留时间

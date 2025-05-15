@@ -1,3 +1,7 @@
+## 3.0.1
+
+* Adjust example
+
 ## 3.0.0
 
 * Add onCreate method to ViewModel, called after the ViewModel is created.
