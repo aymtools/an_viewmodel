@@ -1,7 +1,7 @@
 part of 'value_notifier_ext.dart';
 
 /// 定义一个基于异步状态的数据结构
-abstract class AsyncData<T extends Object> {
+sealed class AsyncData<T extends Object> {
   AsyncData._();
 
   factory AsyncData.loading() => AsyncDataLoading<T>._();

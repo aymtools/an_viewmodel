@@ -10,7 +10,7 @@ part 'view_model_core.dart';
 part 'view_model_tools.dart';
 
 /// ViewModel基类
-abstract class ViewModel {
+abstract mixin class ViewModel {
   // bool _mCleared = false;
   final Cancellable _cancellable = Cancellable();
   late final ViewModels? _viewModels;
