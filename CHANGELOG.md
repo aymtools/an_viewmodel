@@ -1,3 +1,7 @@
+## 3.1.0
+
+* Upgrading Dependencies.
+
 ## 3.0.2
 
 * Fix the bug when viewModelProviderProducer is null.
