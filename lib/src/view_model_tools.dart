@@ -112,17 +112,20 @@ extension ViewModelLifecycleExtension on ILifecycle {
     // 兼容一段时间未来移除
     viewModelProviderProducer ??= viewModelProvider;
 
-    viewModelProviderProducer ??= ViewModel.producer._default;
+    //viewModelProviderProducer ??= ViewModel.producer._default;
 
     final producer =
         _ViewModelDefFactories._getProducer<VM>(viewModelProviderProducer);
 
     assert(() {
-      // ignore: deprecated_member_use
+      //  ignore: deprecated_member_use_from_same_package
       if (ViewModel.doNotAssertProviderProducer) return true;
-      if (producer == viewModelProviderProducer) return true;
+      if (viewModelProviderProducer == null ||
+          producer == viewModelProviderProducer) {
+        return true;
+      }
       var tmp1 = producer.call(owner);
-      var tmp2 = viewModelProviderProducer?.call(owner);
+      var tmp2 = viewModelProviderProducer.call(owner);
       return tmp1 == tmp2;
     }(), 'viewModelProviderProducer already exists with different results.');
 

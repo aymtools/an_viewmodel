@@ -1,3 +1,7 @@
+## 3.0.2
+
+* Fix the bug when viewModelProviderProducer is null.
+
 ## 3.0.1
 
 * Adjust example

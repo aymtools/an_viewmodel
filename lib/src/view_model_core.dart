@@ -31,8 +31,8 @@ class _ViewModelDefFactories {
   }
 
   static ViewModelProviderProducer _getProducer<VM extends ViewModel>(
-      ViewModelProviderProducer producer) {
+      ViewModelProviderProducer? producer) {
     return _ViewModelDefFactories._instance._producerMap
-        .putIfAbsent(VM, () => producer);
+        .putIfAbsent(VM, () => producer ?? ViewModel.producer._default);
   }
 }
