@@ -1,3 +1,7 @@
+## 3.0.3
+
+* Fix the bug in the ViewModel extension viewModels.
+
 ## 3.0.2
 
 * Fix the bug when viewModelProviderProducer is null.
