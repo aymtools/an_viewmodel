@@ -13,7 +13,7 @@ part 'view_model_tools.dart';
 abstract mixin class ViewModel {
   // bool _mCleared = false;
   final Cancellable _cancellable = Cancellable();
-  late final ViewModels? _viewModels;
+  late WeakReference<Lifecycle> _lifecycle;
 
   /// 调用完构造函数之后调用 初始化创建
   /// [lifecycle] 当前ViewModel所寄存的 lifecycle
@@ -193,8 +193,7 @@ class ViewModelProvider {
         _ViewModelDefFactories._instance._factoryMap, lifecycle);
 
     if (result != null) {
-      result._viewModels = (f1, f2, p) => lifecycle.viewModels(
-          factory: f1, factory2: f2, viewModelProviderProducer: p);
+      result._lifecycle = WeakReference(lifecycle);
       result.onCreate(lifecycle);
     }
     return result;
