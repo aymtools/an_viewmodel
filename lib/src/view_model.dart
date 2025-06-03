@@ -97,7 +97,7 @@ class ViewModelStore {
     if (oldViewModel is ViewModel) {
       oldViewModel.clear();
     }
-    return oldViewModel as T;
+    return oldViewModel as T?;
   }
 
   /// 当前已存在的KEY
