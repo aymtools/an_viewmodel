@@ -27,23 +27,27 @@ class RefViewModelProvider extends ViewModelProvider {
       {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) {
     final vm =
         super.getOrCreate<VM>(lifecycle, factory: factory, factory2: factory2);
+    final liveable = vm.makeLiveCancellable();
 
     final disposable = _cancellableMap.putIfAbsent(
         vm,
         () => CancellableEvery()
-          ..onCancel.then((value) => viewModelStore.remove<VM>()));
+          ..onCancel
+              .bindCancellable(liveable)
+              .then((value) => viewModelStore.remove<VM>()));
 
     disposable.add(lifecycle.makeViewModelCancellable(vm));
+
+    liveable.onCancel.then((e) => _cancellableMap.remove(vm)?.cancel(e));
     return vm;
   }
 }
 
-final _keyRefViewModelProviderVMCancellable = Object();
+// final _keyRefViewModelProviderVMCancellable = Object();
 
 extension _LifecycleRefViewModelProviderVMCancellableExt on Lifecycle {
   Cancellable makeViewModelCancellable(ViewModel vm) => extData.putIfAbsent(
-      key: _keyRefViewModelProviderVMCancellable,
-      ifAbsent: () => makeLiveCancellable());
+      key: TypedKey<Cancellable>(vm), ifAbsent: () => makeLiveCancellable());
 }
 
 extension ViewModelProviderProducerConfigRefExt
@@ -62,7 +66,7 @@ extension ViewModelByRefExt on ILifecycle {
   VM viewModelsByRef<VM extends ViewModel>(
       {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) {
     // toLifecycle().
-    return viewModels(
+    return viewModels<VM>(
         factory: factory,
         factory2: factory2,
         viewModelProviderProducer: ViewModel.producer.byRef);
@@ -110,6 +114,6 @@ extension ViewModelsByRefOfStateExt<W extends StatefulWidget> on State<W> {
           .viewModelsByRef(factory: factory, factory2: factory2);
     }
     assert(mounted);
-    return context.viewModelsByRef(factory: factory, factory2: factory2);
+    return context.viewModelsByRef<VM>(factory: factory, factory2: factory2);
   }
 }

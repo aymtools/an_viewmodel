@@ -1,3 +1,7 @@
+## 3.1.0
+
+* RefViewModelProvider now supports handling viewModelStore removal.
+
 ## 3.0.3
 
 * Fix the bug in the ViewModel extension viewModels.
