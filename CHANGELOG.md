@@ -1,3 +1,7 @@
+## 3.2.0
+
+* Upgrading Dependencies.
+
 ## 3.1.0
 
 * RefViewModelProvider now supports handling viewModelStore removal.
