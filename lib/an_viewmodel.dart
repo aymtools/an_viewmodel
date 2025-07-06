@@ -1,4 +1,4 @@
-library an_viewmodel;
+library;
 
 export 'src/ext/context_ext.dart';
 export 'src/ext/value_notifier_ext.dart';
