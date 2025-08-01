@@ -40,6 +40,12 @@ class _ValueNotifier<T> extends ValueNotifier<T> {
       _value = newValue;
     }
   }
+
+  @override
+  void dispose() {
+    _cancellable.cancel();
+    super.dispose();
+  }
 }
 
 extension ViewModelValueNotifierExt on ViewModel {

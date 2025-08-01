@@ -3,16 +3,23 @@ part of 'vm_ext.dart';
 class _MergingValueNotifier<T> extends _ValueNotifier<T> {
   final Iterable<ValueNotifier> _children;
   final T Function() _merge;
+  final Cancellable _clearable;
 
   ///
   /// [awayNotify]任何children 发出的 notify 是否 触发当前的 notifyListeners
   /// 即 即使合并后的结果相同 依然发出通知更新
   _MergingValueNotifier(ViewModel vm, this._children, this._merge,
       [bool awayNotify = false])
-      : super(vm, _merge(), awayNotify) {
+      : _clearable = vm.makeLiveCancellable(),
+        super(vm, _merge(), awayNotify) {
     for (var c in _children) {
       c.addListener(_notifyListeners);
     }
+    _clearable.onCancel.then((_) {
+      for (var c in _children) {
+        c.removeListener(_notifyListeners);
+      }
+    });
   }
 
   void _notifyListeners() {
@@ -21,9 +28,7 @@ class _MergingValueNotifier<T> extends _ValueNotifier<T> {
 
   @override
   void dispose() {
-    for (var c in _children) {
-      c.removeListener(_notifyListeners);
-    }
+    _clearable.cancel();
     super.dispose();
   }
 }

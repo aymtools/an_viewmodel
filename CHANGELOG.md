@@ -1,3 +1,7 @@
+## 3.2.1
+
+* Optimize the cleanup timing of _MergingValueNotifier.
+
 ## 3.2.0
 
 * Upgrading Dependencies.
