@@ -1,35 +1,5 @@
 part of 'view_model.dart';
 
-extension ViewModelViewModelsExt on ViewModel {
-  /// 可以从当前viewModel 继续查找可用的View Model
-  VM viewModels<VM extends ViewModel>(
-      {ViewModelFactory<VM>? factory,
-      ViewModelFactory2<VM>? factory2,
-      ViewModelProvider Function(LifecycleOwner lifecycleOwner)?
-          viewModelProviderProducer}) {
-    return _lifecycle.target!.viewModels<VM>(
-        factory: factory,
-        factory2: factory2,
-        viewModelProviderProducer: viewModelProviderProducer);
-  }
-
-  VM viewModelsByRoute<VM extends ViewModel>(
-      {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) {
-    return viewModels<VM>(
-        factory: factory,
-        factory2: factory2,
-        viewModelProviderProducer: ViewModel.producer.byRoute);
-  }
-
-  VM viewModelsByApp<VM extends ViewModel>(
-      {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) {
-    return viewModels<VM>(
-        factory: factory,
-        factory2: factory2,
-        viewModelProviderProducer: ViewModel.producer.byApp);
-  }
-}
-
 final _keyViewModelProvider = Object();
 
 extension ViewModelStoreOwnerExtension on LifecycleOwner {
@@ -256,4 +226,34 @@ extension ViewModelsState<T extends StatefulWidget> on State<T> {
           factory: factory,
           factory2: factory2,
           viewModelProviderProducer: ViewModel.producer.byApp);
+}
+
+extension ViewModelViewModelsExt on ViewModel {
+  /// 可以从当前viewModel 继续查找可用的View Model
+  VM viewModels<VM extends ViewModel>(
+      {ViewModelFactory<VM>? factory,
+      ViewModelFactory2<VM>? factory2,
+      ViewModelProvider Function(LifecycleOwner lifecycleOwner)?
+          viewModelProviderProducer}) {
+    return _lifecycle.target!.viewModels<VM>(
+        factory: factory,
+        factory2: factory2,
+        viewModelProviderProducer: viewModelProviderProducer);
+  }
+
+  VM viewModelsByRoute<VM extends ViewModel>(
+      {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) {
+    return viewModels<VM>(
+        factory: factory,
+        factory2: factory2,
+        viewModelProviderProducer: ViewModel.producer.byRoute);
+  }
+
+  VM viewModelsByApp<VM extends ViewModel>(
+      {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) {
+    return viewModels<VM>(
+        factory: factory,
+        factory2: factory2,
+        viewModelProviderProducer: ViewModel.producer.byApp);
+  }
 }

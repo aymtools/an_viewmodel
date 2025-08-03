@@ -75,44 +75,58 @@ extension _ViewModelClean on ViewModel {
 
 /// ViewModel的Store
 class ViewModelStore {
-  final Map<Object, ViewModel> mMap = HashMap();
+  final Map<Object, ViewModel> _mMap = HashMap();
 
   /// 放入一个ViewModel 如果已经存在则上一个执行清理
-  void put<T extends ViewModel>(T viewModel) {
-    ViewModel? oldViewModel = mMap[T];
-    mMap[T] = viewModel;
+  void put<VM extends ViewModel>(VM viewModel, {Type? vmType}) {
+    vmType ??= VM;
+    ViewModel? oldViewModel = _mMap[vmType];
+    _mMap[vmType] = viewModel;
+
     if (oldViewModel != null) {
       oldViewModel.clear();
     }
   }
 
   /// 获取ViewModel
-  T? get<T extends ViewModel>() {
-    return mMap[T] as T?;
+  VM? get<VM extends ViewModel>({Type? vmType}) {
+    vmType ??= VM;
+    final r = _mMap[vmType];
+    assert(r == null || r is VM, '$vmType must be $VM or a subclass of $VM');
+    return r as VM?;
   }
 
   /// 获取ViewModel
-  T? remove<T extends ViewModel>() {
-    Object? oldViewModel = mMap.remove(T);
+  VM? remove<VM extends ViewModel>({Type? vmType}) {
+    assert(() {
+      Object? oldViewModel = _mMap[vmType];
+      if (vmType != null && oldViewModel != null) {
+        return oldViewModel is VM;
+      }
+      return true;
+    }(), '$vmType must be $VM or a subclass of $VM');
+
+    vmType ??= VM;
+    Object? oldViewModel = _mMap.remove(vmType);
     if (oldViewModel is ViewModel) {
       oldViewModel.clear();
     }
-    return oldViewModel as T?;
+    return oldViewModel as VM?;
   }
 
   /// 当前已存在的KEY
   Set<Object> keys() {
-    return Set.of(mMap.keys);
+    return Set.of(_mMap.keys);
   }
 
   ///Clears internal storage and notifies ViewModels that they are no longer used.
   void clear() {
-    if (mMap.isNotEmpty) {
-      for (ViewModel vm in [...mMap.values]) {
+    if (_mMap.isNotEmpty) {
+      for (ViewModel vm in [..._mMap.values]) {
         vm.clear();
       }
+      _mMap.clear();
     }
-    mMap.clear();
   }
 }
 
@@ -144,16 +158,21 @@ class ViewModelProvider {
   /// 使用当前的Provider获取或创建一个 ViewModel
   /// [lifecycle] 调用时的lifecycle 不一定是寄存的
   VM getOrCreate<VM extends ViewModel>(Lifecycle lifecycle,
-      {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) {
-    var vmCache = _viewModelStore.get<VM>();
+      {ViewModelFactory<VM>? factory,
+      ViewModelFactory2<VM>? factory2,
+      Type? vmType}) {
+    var vmCache = _viewModelStore.get<VM>(vmType: vmType);
     if (vmCache != null) return vmCache;
     VM? vm = ViewModelProvider.newInstanceViewModel(_lifecycle,
-        factories: _factoryMap, factory: factory, factory2: factory2);
+        factories: _factoryMap,
+        factory: factory,
+        factory2: factory2,
+        vmType: vmType);
     if (vm != null) {
-      _viewModelStore.put<VM>(vm);
+      _viewModelStore.put<VM>(vm, vmType: vmType);
       return vm;
     }
-    throw 'cannot find $VM factory';
+    throw 'cannot find ${vmType ?? VM} factory';
   }
 
   /// 添加一个创建器1
@@ -181,16 +200,17 @@ class ViewModelProvider {
   static VM? newInstanceViewModel<VM extends ViewModel>(Lifecycle lifecycle,
       {Map<Type, Function>? factories,
       ViewModelFactory<VM>? factory,
-      ViewModelFactory2<VM>? factory2}) {
+      ViewModelFactory2<VM>? factory2,
+      Type? vmType}) {
     VM? result;
     result = factory?.call();
     result ??= factory2?.call(lifecycle);
     _debugPrintViewModelCreated(result, lifecycle, factory, factory2);
     if (result == null && factories != null) {
-      result = _newInstanceViewModel<VM>(factories, lifecycle);
+      result = _newInstanceViewModel<VM>(factories, lifecycle, vmType);
     }
     result ??= _newInstanceViewModel<VM>(
-        _ViewModelDefFactories._instance._factoryMap, lifecycle);
+        _ViewModelDefFactories._instance._factoryMap, lifecycle, vmType);
 
     if (result != null) {
       result._lifecycle = WeakReference(lifecycle);
@@ -201,9 +221,14 @@ class ViewModelProvider {
 }
 
 VM? _newInstanceViewModel<VM extends ViewModel>(
-    Map<Type, Function> factories, Lifecycle lifecycle) {
+    Map<Type, Function> factories, Lifecycle lifecycle, Type? vmType) {
   VM? vm;
-  Function? factory = factories[VM];
+  Function? factory;
+  if (vmType != null) {
+    factory = factories[vmType];
+  } else {
+    factory = factories[VM];
+  }
   if (factory is ViewModelFactory<VM>) {
     vm = factory();
     _debugPrintViewModelCreated(vm, lifecycle, factory, null);

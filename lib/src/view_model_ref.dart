@@ -24,9 +24,11 @@ class RefViewModelProvider extends ViewModelProvider {
   /// 获取 如果不存在则创建
   @override
   VM getOrCreate<VM extends ViewModel>(Lifecycle lifecycle,
-      {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) {
-    final vm =
-        super.getOrCreate<VM>(lifecycle, factory: factory, factory2: factory2);
+      {ViewModelFactory<VM>? factory,
+      ViewModelFactory2<VM>? factory2,
+      Type? vmType}) {
+    final vm = super.getOrCreate<VM>(lifecycle,
+        factory: factory, factory2: factory2, vmType: vmType);
     final liveable = vm.makeLiveCancellable();
 
     final disposable = _cancellableMap.putIfAbsent(
