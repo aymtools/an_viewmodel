@@ -1,3 +1,12 @@
+## 3.3.0
+
+* Added support for specifying the type during creation to enable runtime ViewModel instantiation.
+* ViewModelProvider.getOrCreate is deprecated, please use getOrCreateViewModel instead.
+
+### Breaking Changes
+
+* All ViewModel functions in ViewModelStore now have an optional vmType parameter.
+
 ## 3.2.1
 
 * Optimize the cleanup timing of _MergingValueNotifier.

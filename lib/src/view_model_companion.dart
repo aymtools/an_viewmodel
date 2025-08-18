@@ -17,8 +17,7 @@ extension ViewModelProviderProducerConfigCoreExt
   }
 
   ViewModelProviderProducer get _default {
-    return ViewModelProvider._viewModelProviderProducer ??
-        (owner) => owner.getViewModelProvider();
+    return ViewModelProvider._viewModelProviderProducer ?? byCurr;
   }
 
   /// viewModels的提供者 指定为基于路由 路由页面内唯一
@@ -28,6 +27,10 @@ extension ViewModelProviderProducerConfigCoreExt
   /// viewModels的提供者 基于App app内唯一
   ViewModelProviderProducer get byApp =>
       (owner) => owner.getViewModelProviderByApp();
+
+  /// viewModels的提供者 当前最近的Lifecycle
+  ViewModelProviderProducer get byCurr =>
+      (owner) => owner.getViewModelProvider();
 }
 
 class ViewModelFactoriesCompanion {

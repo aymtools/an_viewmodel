@@ -19,7 +19,9 @@ class _ValueNotifier<T> extends ValueNotifier<T> {
 
   _ValueNotifier(ViewModel vm, this._value, [this.notifyWhenEquals = false])
       : _cancellable = vm.makeCloseable(),
-        super(_value);
+        super(_value) {
+    _cancellable.whenCancel.then((_) => super.dispose());
+  }
 
   @override
   T get value => _value;
@@ -29,12 +31,12 @@ class _ValueNotifier<T> extends ValueNotifier<T> {
     if (_cancellable.isAvailable) {
       if (_value == newValue) {
         if (notifyWhenEquals) {
-          notifyListeners();
+          super.notifyListeners();
         }
         return;
       }
       _value = newValue;
-      notifyListeners();
+      super.notifyListeners();
     } else {
       // 仅仅赋值不通知
       _value = newValue;
@@ -42,9 +44,30 @@ class _ValueNotifier<T> extends ValueNotifier<T> {
   }
 
   @override
+  void addListener(VoidCallback listener) {
+    if (_cancellable.isAvailable) {
+      super.addListener(listener);
+    }
+  }
+
+  @override
+  void removeListener(VoidCallback listener) {
+    if (_cancellable.isAvailable) {
+      super.removeListener(listener);
+    }
+  }
+
+  @override
+  void notifyListeners() {
+    if (_cancellable.isAvailable) {
+      super.notifyListeners();
+    }
+  }
+
+  @override
+  // ignore: must_call_super
   void dispose() {
     _cancellable.cancel();
-    super.dispose();
   }
 }
 

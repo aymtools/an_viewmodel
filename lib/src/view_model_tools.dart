@@ -1,18 +1,23 @@
 part of 'view_model.dart';
 
-final _keyViewModelProvider = Object();
+final WeakHashMap<LifecycleOwner, ViewModelProvider> _viewModelProviderMap =
+    WeakHashMap();
 
 extension ViewModelStoreOwnerExtension on LifecycleOwner {
   /// 获取 当前的viewModelStore
+  /// 由于owner中可能不仅仅存在一种 viewModelProvider 直接获取store 存在歧义 未来将会移除
+  @Deprecated('use getViewModelProvider().viewModelStore , v3.3.0')
   ViewModelStore getViewModelStore() => getViewModelProvider().viewModelStore;
 
   /// 获取当前的 viewModelProvider
   ViewModelProvider getViewModelProvider() {
     assert(currentLifecycleState > LifecycleState.destroyed,
         'Must be used before destroyed.');
-    return extData.putIfAbsent<ViewModelProvider>(
-        key: _keyViewModelProvider,
-        ifAbsent: () => ViewModelProvider(lifecycle));
+    return _viewModelProviderMap.putIfAbsent(this, () {
+      addLifecycleObserver(
+          LifecycleObserver.onEventDestroy(_viewModelProviderMap.remove));
+      return ViewModelProvider(lifecycle);
+    });
   }
 
   /// 查找最近的路由page 级别的 viewModelProvider
@@ -99,9 +104,8 @@ extension ViewModelLifecycleExtension on ILifecycle {
       return tmp1 == tmp2;
     }(), 'viewModelProviderProducer already exists with different results.');
 
-    return producer
-        .call(owner)
-        .getOrCreate<VM>(toLifecycle(), factory: factory, factory2: factory2);
+    return producer.call(owner).getOrCreateViewModel<VM>(toLifecycle(),
+        factory: factory, factory2: factory2);
   }
 
   /// 获取基于RoutePage的ViewModel

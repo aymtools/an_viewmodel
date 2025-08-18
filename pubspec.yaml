@@ -1,6 +1,6 @@
 name: an_viewmodel
 description: "A package for managing ViewModel that depends on an_lifecycle. Similar to Androidx ViewModel."
-version: 3.2.1
+version: 3.3.0
 homepage: https://github.com/aymtools/an_viewmodel/
 issue_tracker: https://github.com/aymtools/an_viewmodel/issues
 
@@ -19,10 +19,10 @@ dependencies:
     sdk: flutter
 
 
-  cancellable: ^2.2.4
-  anlifecycle: ^3.1.4
-  an_lifecycle_cancellable: ^2.3.3
-  weak_collections: ^1.3.0
+  cancellable: ^2.3.0
+  anlifecycle: ^3.2.0
+  an_lifecycle_cancellable: ^2.4.0
+  weak_collections: ^1.3.1
 
 dev_dependencies:
   flutter_test:

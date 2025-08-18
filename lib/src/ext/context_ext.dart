@@ -1,10 +1,9 @@
 import 'dart:async';
 
 import 'package:an_lifecycle_cancellable/an_lifecycle_cancellable.dart';
+import 'package:an_viewmodel/src/view_model.dart';
 import 'package:anlifecycle/anlifecycle.dart';
 import 'package:flutter/widgets.dart';
-
-import '../view_model.dart';
 
 final _keyLifecycleAndViewModelEffect = Object();
 
@@ -15,6 +14,7 @@ extension BuildContextWithLifecycleAndViewModelEffectExt on BuildContext {
   ///允许基于当前context和viewmodel执行生命周期相关的函数
   ///***
   ///特别说明 task中的Lifecycle是当前context最近的Lifecycle 并非ViewModel所寄存的Lifecycle
+  @Deprecated('use viewModels() and withLifecycleEffect(), v3.3.0')
   VM withLifecycleAndViewModelEffect<VM extends ViewModel>({
     VM? data,
     VM Function()? factory,

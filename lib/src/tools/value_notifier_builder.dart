@@ -1,7 +1,7 @@
 import 'package:an_viewmodel/src/ext/value_notifier_ext.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart' hide Builder;
 import 'package:flutter/widgets.dart' as widgets;
+import 'package:flutter/widgets.dart' hide Builder;
 
 typedef ErrorBuilder = Widget Function(
     BuildContext context, Object error, StackTrace? stackTrace);
@@ -20,8 +20,7 @@ Widget _errorBuilder(
         BuildContext context, Object error, StackTrace? stackTrace) =>
     const SizedBox.shrink();
 
-Widget _loadingBuilder(BuildContext context) =>
-    const Center(child: CircularProgressIndicator());
+Widget _loadingBuilder(BuildContext context) => const SizedBox.shrink();
 
 Widget _errorBuilderToSliver(BuildContext context, Widget errorWidget,
         Object error, StackTrace? stackTrace) =>
@@ -29,24 +28,6 @@ Widget _errorBuilderToSliver(BuildContext context, Widget errorWidget,
 
 Widget _loadingSliverBuilder(BuildContext context, Widget loadingWidget) =>
     SliverFillRemaining(child: loadingWidget);
-
-extension ValueNotifierBuilderExt<T> on ValueListenable<T> {
-  /// 快速构建一个ValueListenableBuilder
-  /// ignore: non_constant_identifier_names
-  Widget Builder({
-    required ValueAndChildBuilder<T> builder,
-    Widget child = const SizedBox.shrink(),
-    Key? key,
-  }) {
-    return ValueListenableBuilder<T>(
-      key: key,
-      valueListenable: this,
-      builder: (context, value, _) {
-        return builder(context, value, child);
-      },
-    );
-  }
-}
 
 extension ValueNotifierAsyncBuilderExt<T extends Object>
     on ValueListenable<AsyncData<T>> {

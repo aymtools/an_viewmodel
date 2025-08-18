@@ -104,7 +104,6 @@ class HomeViewModelDemo extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            /// 如果你更喜欢使用 Hook  [an_lifecycle_hooks](https://pub.dev/packages/an_lifecycle_hooks)
             ValueListenableBuilder(
               valueListenable: viewModel.stayed,
               builder: (context, value, _) => Text(

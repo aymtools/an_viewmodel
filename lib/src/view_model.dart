@@ -1,9 +1,9 @@
 import 'dart:collection';
 
-import 'package:an_lifecycle_cancellable/an_lifecycle_cancellable.dart';
 import 'package:anlifecycle/anlifecycle.dart';
 import 'package:cancellable/cancellable.dart';
 import 'package:flutter/widgets.dart';
+import 'package:weak_collections/weak_collections.dart';
 
 part 'view_model_companion.dart';
 part 'view_model_core.dart';
@@ -157,10 +157,32 @@ class ViewModelProvider {
 
   /// 使用当前的Provider获取或创建一个 ViewModel
   /// [lifecycle] 调用时的lifecycle 不一定是寄存的
+  @Deprecated('use getOrCreateViewModel')
   VM getOrCreate<VM extends ViewModel>(Lifecycle lifecycle,
+      {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) {
+    var vmCache = _viewModelStore.get<VM>();
+    if (vmCache != null) return vmCache;
+    VM? vm = ViewModelProvider.newInstanceViewModel(_lifecycle,
+        factories: _factoryMap, factory: factory, factory2: factory2);
+    if (vm != null) {
+      _viewModelStore.put<VM>(vm);
+      return vm;
+    }
+    throw 'cannot find $VM factory';
+  }
+
+  /// 使用当前的Provider获取或创建一个 ViewModel
+  /// [lifecycle] 调用时的lifecycle 不一定是寄存的
+  VM getOrCreateViewModel<VM extends ViewModel>(Lifecycle lifecycle,
       {ViewModelFactory<VM>? factory,
       ViewModelFactory2<VM>? factory2,
       Type? vmType}) {
+    if (vmType == null) {
+      // 保持兼容性 未来移除
+      // ignore: deprecated_member_use_from_same_package
+      return getOrCreate<VM>(lifecycle, factory: factory, factory2: factory2);
+    }
+
     var vmCache = _viewModelStore.get<VM>(vmType: vmType);
     if (vmCache != null) return vmCache;
     VM? vm = ViewModelProvider.newInstanceViewModel(_lifecycle,
