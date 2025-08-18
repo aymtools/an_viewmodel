@@ -194,7 +194,7 @@ class ViewModelProvider {
       _viewModelStore.put<VM>(vm, vmType: vmType);
       return vm;
     }
-    throw 'cannot find ${vmType ?? VM} factory';
+    throw 'cannot find $vmType factory';
   }
 
   /// 添加一个创建器1
