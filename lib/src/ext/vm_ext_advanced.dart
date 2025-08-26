@@ -6,9 +6,16 @@ extension ViewModelValueNotifierAdvancedExt on ViewModel {
   ValueNotifier<R> valueNotifierTransform<R, S>(
       {required ValueNotifier<S> source, required R Function(S) transformer}) {
     final ValueNotifier<R> result = valueNotifier<R>(transformer(source.value));
+    if (isCleared) {
+      return result;
+    }
 
-    source.addCListener(
-        makeCloseable(), () => result.value = transformer(source.value));
+    void listener() => result.value = transformer(source.value);
+
+    source.addListener(listener);
+    makeLiveCancellable(weakRef: false)
+        .whenCancel
+        .then((_) => source.removeListener(listener));
 
     return result;
   }

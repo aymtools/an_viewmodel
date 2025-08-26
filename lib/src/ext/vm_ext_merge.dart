@@ -10,7 +10,7 @@ class _MergingValueNotifier<T> extends _ValueNotifier<T> {
   /// 即 即使合并后的结果相同 依然发出通知更新
   _MergingValueNotifier(ViewModel vm, this._children, this._merge,
       [bool awayNotify = false])
-      : _clearable = vm.makeLiveCancellable(),
+      : _clearable = vm.makeLiveCancellable(weakRef: true),
         super(vm, _merge(), awayNotify) {
     for (var c in _children) {
       c.addListener(_notifyListeners);

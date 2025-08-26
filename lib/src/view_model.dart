@@ -53,14 +53,19 @@ abstract mixin class ViewModel {
 extension ViewModelExt on ViewModel {
   /// 添加一个自动清理的回调
   void onDispose(void Function() onDispose) {
-    makeLiveCancellable().onCancel.then((_) => onDispose());
+    makeLiveCancellable(weakRef: false).onCancel.then((_) => onDispose());
   }
 
   /// 生成一个基于viewModel生命周期的cancellable
-  Cancellable makeCloseable() => makeLiveCancellable();
+  /// 默认强关联
+  Cancellable makeCloseable() => makeLiveCancellable(weakRef: false);
 
-  Cancellable makeLiveCancellable({Cancellable? other}) => _cancellable
-      .makeCancellable(father: other, infectious: false, weakRef: false);
+  /// 生成一个基于viewModel生命周期的cancellable
+  Cancellable makeLiveCancellable({Cancellable? other, bool weakRef = true}) =>
+      _cancellable.makeCancellable(
+          father: other, infectious: false, weakRef: weakRef);
+
+  bool get isCleared => _cancellable.isUnavailable;
 }
 
 extension _ViewModelClean on ViewModel {

@@ -1,21 +1,54 @@
 import 'dart:collection';
 
-import 'package:an_lifecycle_cancellable/an_lifecycle_cancellable.dart';
 import 'package:anlifecycle/anlifecycle.dart';
-import 'package:cancellable/cancellable.dart';
 import 'package:flutter/widgets.dart';
+import 'package:weak_collections/weak_collections.dart';
 
 import 'view_model.dart';
 
+class _RefManager extends LifecycleEventObserver {
+  bool _isDestroyed = false;
+  final Set<Lifecycle> _users = WeakHashSet();
+  final void Function() onDispose;
+
+  _RefManager({required this.onDispose});
+
+  void add(Lifecycle lifecycle) {
+    if (_isDestroyed) return;
+    if (lifecycle.currentLifecycleState > LifecycleState.destroyed) {
+      if (_users.add(lifecycle)) {
+        lifecycle.addLifecycleObserver(this);
+      }
+      return;
+    }
+    if (_users.isEmpty) {
+      _isDestroyed = true;
+      onDispose();
+    }
+  }
+
+  _check(Lifecycle willRemove) {
+    _users.remove(willRemove);
+    if (_users.isEmpty) {
+      _isDestroyed = true;
+      onDispose();
+    }
+  }
+
+  @override
+  void onDestroy(LifecycleOwner owner) {
+    super.onDestroy(owner);
+    _check(owner.lifecycle);
+  }
+}
+
 /// 对缓存式的ViewModel提供支持
 class RefViewModelProvider extends ViewModelProvider {
-  final Map<ViewModel, CancellableEvery> _cancellableMap = HashMap();
+  final Map<ViewModel, _RefManager> _cancellableMap = HashMap.identity();
 
-  RefViewModelProvider(super.appLifecycle) {
-    lifecycle
-        .makeLiveCancellable()
-        .onCancel
-        .then((_) => _cancellableMap.clear());
+  RefViewModelProvider(Lifecycle lifecycle) : super(lifecycle) {
+    lifecycle.addLifecycleObserver(
+        LifecycleObserver.eventCreate(_cancellableMap.clear));
   }
 
   @override
@@ -29,27 +62,15 @@ class RefViewModelProvider extends ViewModelProvider {
       Type? vmType}) {
     final vm = super.getOrCreateViewModel<VM>(lifecycle,
         factory: factory, factory2: factory2, vmType: vmType);
-    final liveable = vm.makeLiveCancellable();
-
-    final disposable = _cancellableMap.putIfAbsent(
+    final _RefManager manager = _cancellableMap.putIfAbsent(
         vm,
-        () => CancellableEvery()
-          ..onCancel
-              .bindCancellable(liveable)
-              .then((value) => viewModelStore.remove<VM>()));
-
-    disposable.add(lifecycle.makeViewModelCancellable(vm));
-
-    liveable.onCancel.then((e) => _cancellableMap.remove(vm)?.cancel(e));
+        () => _RefManager(onDispose: () {
+              viewModelStore.remove<VM>();
+              _cancellableMap.remove(vm);
+            }));
+    manager.add(lifecycle);
     return vm;
   }
-}
-
-// final _keyRefViewModelProviderVMCancellable = Object();
-
-extension _LifecycleRefViewModelProviderVMCancellableExt on Lifecycle {
-  Cancellable makeViewModelCancellable(ViewModel vm) => extData.putIfAbsent(
-      key: TypedKey<Cancellable>(vm), ifAbsent: () => makeLiveCancellable());
 }
 
 extension ViewModelProviderProducerConfigRefExt
@@ -59,7 +80,8 @@ extension ViewModelProviderProducerConfigRefExt
       (owner) => owner.getRefViewModelProvider();
 }
 
-final _keyRefViewModelProvider = Object();
+final Map<LifecycleOwner, RefViewModelProvider> _refViewModelProviderMap =
+    WeakHashMap();
 
 extension ViewModelByRefExt on ILifecycle {
   /// 当还有引用时 下次获取依然是同一个 当没有任何引用的时候 会执行清理vm
@@ -76,10 +98,24 @@ extension ViewModelByRefExt on ILifecycle {
 
   /// 获取 RefViewModelProvider
   RefViewModelProvider getRefViewModelProvider() {
-    final appLifecycle = findLifecycleOwner<LifecycleOwnerState>(
-        test: (owner) => owner.lifecycle.parent == null)!;
-    return appLifecycle.extData.getOrPut(
-        key: _keyRefViewModelProvider, ifAbsent: RefViewModelProvider.new);
+    final appLifecycle = _findTopLifecycleOwner();
+    assert(appLifecycle.currentLifecycleState > LifecycleState.destroyed);
+    return _refViewModelProviderMap.putIfAbsent(appLifecycle, () {
+      final result = RefViewModelProvider(appLifecycle.lifecycle);
+      if (appLifecycle.currentLifecycleState > LifecycleState.destroyed) {
+        appLifecycle.addLifecycleObserver(
+            LifecycleObserver.onEventDestroy(_refViewModelProviderMap.remove));
+      }
+      return result;
+    });
+  }
+
+  LifecycleOwner _findTopLifecycleOwner() {
+    Lifecycle lifecycle = toLifecycle();
+    while (lifecycle.parent != null) {
+      lifecycle = lifecycle.parent!;
+    }
+    return lifecycle.owner;
   }
 }
 

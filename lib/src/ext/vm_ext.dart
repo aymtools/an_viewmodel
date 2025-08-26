@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:an_lifecycle_cancellable/an_lifecycle_cancellable.dart';
 import 'package:cancellable/cancellable.dart';
 import 'package:flutter/foundation.dart';
 
@@ -18,7 +17,7 @@ class _ValueNotifier<T> extends ValueNotifier<T> {
   T _value;
 
   _ValueNotifier(ViewModel vm, this._value, [this.notifyWhenEquals = false])
-      : _cancellable = vm.makeCloseable(),
+      : _cancellable = vm.makeLiveCancellable(weakRef: true),
         super(_value) {
     _cancellable.whenCancel.then((_) => super.dispose());
   }
@@ -77,17 +76,27 @@ extension ViewModelValueNotifierExt on ViewModel {
   @protected
   ValueNotifier<T> valueNotifierSource<T>(ValueNotifier<T> source,
       {bool autoDisposeSource = true, bool bindSource = true}) {
-    final cancellable = makeCloseable();
+    final cancellable = makeLiveCancellable(weakRef: false);
+
     if (autoDisposeSource) {
-      source.bindCancellable(cancellable);
+      cancellable.whenCancel.then((_) => source.dispose());
     }
     final result = valueNotifier(source.value);
-
-    source.addCListener(cancellable, () => result.value = source.value);
-    if (bindSource) {
-      result.addCListener(cancellable, () => source.value = result.value);
+    if (isCleared) {
+      return result;
     }
 
+    void listener() => result.value = source.value;
+    source.addListener(listener);
+    cancellable.onCancel.then((_) => source.removeListener(listener));
+
+    if (bindSource) {
+      void listener2() => source.value = result.value;
+      result.addListener(listener2);
+
+      /// 由于是_ValueNotifier 无须反向解绑
+      //cancellable.onCancel.then((_) => result.removeListener(listener2));
+    }
     return result;
   }
 
@@ -159,7 +168,7 @@ extension ViewModelValueNotifierExt on ViewModel {
       {required Future<T> future, required T initialData, Function? onError}) {
     final result = valueNotifier(initialData);
     future
-        .bindCancellable(makeCloseable())
+        .bindCancellable(makeLiveCancellable(weakRef: false))
         .then((event) => result.value = event, onError: onError);
     return result;
   }
@@ -172,7 +181,7 @@ extension ViewModelValueNotifierExt on ViewModel {
   }) {
     final result = valueNotifierAsync<T>(initialData: initialData);
     future
-        ?.bindCancellable(makeCloseable())
+        ?.bindCancellable(makeLiveCancellable(weakRef: false))
         .then(result.toValue, onError: result.toError);
     return result;
   }
