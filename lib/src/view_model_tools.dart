@@ -1,7 +1,7 @@
 part of 'view_model.dart';
 
 final WeakHashMap<LifecycleOwner, ViewModelProvider> _viewModelProviderMap =
-    WeakHashMap();
+    WeakHashMap.identity();
 
 extension ViewModelStoreOwnerExtension on LifecycleOwner {
   /// 获取 当前的viewModelStore
@@ -36,7 +36,7 @@ extension ViewModelStoreOwnerExtension on LifecycleOwner {
 }
 
 extension _ViewModelRegistryExtension on ILifecycleRegistry {
-  ViewModelProvider _getViewModelProvider<LO extends LifecycleOwnerStateMixin>(
+  ViewModelProvider _getViewModelProvider<LO extends LifecycleOwner>(
       {bool Function(LO)? testLifecycleOwner}) {
     final owner = _findLifecycleOwner<LO>(test: testLifecycleOwner);
     if (owner == null) {
@@ -45,7 +45,7 @@ extension _ViewModelRegistryExtension on ILifecycleRegistry {
     return owner.getViewModelProvider();
   }
 
-  LO? _findLifecycleOwner<LO extends LifecycleOwnerStateMixin>(
+  LO? _findLifecycleOwner<LO extends LifecycleOwner>(
       {bool Function(LO)? test}) {
     Lifecycle? life = lifecycle;
     if (test == null) {

@@ -11,7 +11,6 @@ part 'view_model_tools.dart';
 
 /// ViewModel基类
 abstract mixin class ViewModel {
-  // bool _mCleared = false;
   final Cancellable _cancellable = Cancellable();
   late WeakReference<Lifecycle> _lifecycle;
 
@@ -57,7 +56,7 @@ extension ViewModelExt on ViewModel {
   }
 
   /// 生成一个基于viewModel生命周期的cancellable
-  /// 默认强关联
+  /// - 默认强关联
   Cancellable makeCloseable() => makeLiveCancellable(weakRef: false);
 
   /// 生成一个基于viewModel生命周期的cancellable
@@ -154,9 +153,11 @@ class ViewModelProvider {
     }));
   }
 
+  @visibleForTesting
   @protected
   ViewModelStore get viewModelStore => _viewModelStore;
 
+  @visibleForTesting
   @protected
   Lifecycle get lifecycle => _lifecycle;
 

@@ -76,17 +76,19 @@ class RefViewModelProvider extends ViewModelProvider {
 extension ViewModelProviderProducerConfigRefExt
     on ViewModelProviderProducerCompanion {
   /// 缓存式的ViewModel提供支持的提供者
+  /// - 必须要有一个顶级的lifecycleOwner 一般是app
+  /// - 如果存在多个顶 怎会产生多个 RefViewModelProvider viewModels的结果会根据不同的provider返回
   ViewModelProviderProducer get byRef =>
       (owner) => owner.getRefViewModelProvider();
 }
 
 final Map<LifecycleOwner, RefViewModelProvider> _refViewModelProviderMap =
-    WeakHashMap();
+    WeakHashMap.identity();
 
 extension ViewModelByRefExt on ILifecycle {
   /// 当还有引用时 下次获取依然是同一个 当没有任何引用的时候 会执行清理vm
-  /// - factory2 创建的时候使用app lifecycle
-  /// 对于回收不建议使用lifecycle参数 推荐使用VM的 [onCleared] [addCloseable] [onDispose]
+  /// - [factory2] 创建的时候使用最顶层的[lifecycle]
+  /// - 对于回收不建议使用[lifecycle]参数 推荐使用VM的 [onCleared], [addCloseable], [onDispose]
   VM viewModelsByRef<VM extends ViewModel>(
       {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) {
     // toLifecycle().
@@ -121,8 +123,8 @@ extension ViewModelByRefExt on ILifecycle {
 
 extension ViewModelsByRefOfBuildContextExt on BuildContext {
   /// 当还有引用时 下次获取依然是同一个 当没有任何引用的时候 会执行清理vm
-  /// - factory2 创建的时候使用app lifecycle
-  /// 对于回收不建议使用lifecycle参数 推荐使用VM的 [onCleared] [addCloseable] [onDispose]
+  /// - [factory2] 创建的时候使用最顶层的[lifecycle]
+  /// - 对于回收不建议使用[lifecycle]参数 推荐使用VM的 [onCleared], [addCloseable], [onDispose]
   VM viewModelsByRef<VM extends ViewModel>(
       {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) {
     Lifecycle? lifecycle;
@@ -143,8 +145,8 @@ extension ViewModelsByRefOfBuildContextExt on BuildContext {
 
 extension ViewModelsByRefOfStateExt<W extends StatefulWidget> on State<W> {
   /// 当还有引用时 下次获取依然是同一个 当没有任何引用的时候 会执行清理vm
-  /// - factory2 创建的时候使用app lifecycle
-  /// 对于回收不建议使用lifecycle参数 推荐使用VM的 [onCleared] [addCloseable] [onDispose]
+  /// - [factory2] 创建的时候使用最顶层的[lifecycle]
+  /// - 对于回收不建议使用[lifecycle]参数 推荐使用VM的 [onCleared]，[addCloseable], [onDispose]
   VM viewModelsByRefOfState<VM extends ViewModel>(
       {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) {
     if (this is ILifecycleRegistry) {
