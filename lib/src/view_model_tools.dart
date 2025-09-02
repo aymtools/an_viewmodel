@@ -30,7 +30,7 @@ extension ViewModelStoreOwnerExtension on LifecycleOwner {
           testLifecycleOwner: (owner) => owner.lifecycle.parent == null);
 
   /// 自定义查找模式 的 viewModelProvider
-  ViewModelProvider findViewModelProvider<LO extends LifecycleOwnerStateMixin>(
+  ViewModelProvider findViewModelProvider<LO extends LifecycleOwner>(
           {bool Function(LO)? testLifecycleOwner}) =>
       _getViewModelProvider<LO>(testLifecycleOwner: testLifecycleOwner);
 }

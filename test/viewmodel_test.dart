@@ -118,6 +118,16 @@ void main() {
       app.lifecycleRegistry.handleLifecycleEvent(LifecycleEvent.destroy);
       expect(vm.isCallCleared, isTrue);
     });
+
+    test('.viewModels() lifecycle Env change', () {
+      LifecycleOwnerMock scope = LifecycleOwnerMock('scope');
+      scope.lifecycleRegistry.handleLifecycleEvent(LifecycleEvent.create);
+      scope.lifecycleRegistry.bindParentLifecycle(app.lifecycle);
+
+      final vm1 = app.viewModels<TestViewModel>();
+      final vm2 = scope.viewModels<TestViewModel>();
+      expect(vm1, isNot(equals(vm2)));
+    });
   });
 
   group('byRef', () {
@@ -210,6 +220,112 @@ void main() {
 
       app.lifecycleRegistry.handleLifecycleEvent(LifecycleEvent.destroy);
       expect(vm1.isCallCleared, isTrue);
+    });
+  });
+
+  group('viewModelProviderProducer', () {
+    late LifecycleOwnerMock app;
+    setUp(() {
+      app = LifecycleOwnerMock('app');
+      app.lifecycleRegistry.handleLifecycleEvent(LifecycleEvent.start);
+    });
+    tearDown(() {
+      // 走完所有的生命周期
+      if (app.currentLifecycleState > LifecycleState.destroyed) {
+        app.lifecycleRegistry.handleLifecycleEvent(LifecycleEvent.destroy);
+      }
+    });
+
+    test('.viewModels() Producer ', () {
+      ViewModel.factories.addFactory(Test3ViewModel.new);
+
+      final scope = LifecycleOwnerMock('scope');
+      scope.lifecycleRegistry.handleLifecycleEvent(LifecycleEvent.create);
+      scope.lifecycleRegistry.bindParentLifecycle(app.lifecycle);
+
+      ViewModelProvider producer(LifecycleOwner owner) =>
+          owner.findViewModelProvider<LifecycleOwner>(
+              testLifecycleOwner: (owner) => owner.scope == 'app');
+
+      final vm1 =
+          app.viewModels<Test3ViewModel>(viewModelProviderProducer: producer);
+      final vm2 =
+          scope.viewModels<Test3ViewModel>(viewModelProviderProducer: producer);
+
+      expect(vm1, equals(vm2));
+
+      Object? err;
+      try {
+        final vm3 = scope.viewModels<Test3ViewModel>();
+      } catch (error) {
+        err = error;
+      }
+      expect(err, isNull,
+          reason: 'viewModelProviderProducer Already registered');
+
+      scope.lifecycleRegistry.handleLifecycleEvent(LifecycleEvent.destroy);
+      expect(vm1.isCallCleared, isFalse);
+      expect(vm2.isCallCleared, isFalse);
+
+      app.lifecycleRegistry.handleLifecycleEvent(LifecycleEvent.destroy);
+      expect(vm1.isCallCleared, isTrue);
+    });
+
+    test('.viewModels() producer conflict', () {
+      ViewModel.factories.addFactory(Test4ViewModel.new);
+
+      final scope = LifecycleOwnerMock('scope');
+      scope.lifecycleRegistry.handleLifecycleEvent(LifecycleEvent.create);
+      scope.lifecycleRegistry.bindParentLifecycle(app.lifecycle);
+
+      final scope2 = LifecycleOwnerMock('scope2');
+      scope2.lifecycleRegistry.handleLifecycleEvent(LifecycleEvent.create);
+      scope2.lifecycleRegistry.bindParentLifecycle(app.lifecycle);
+
+      ViewModelProvider producer(LifecycleOwner owner) =>
+          owner.findViewModelProvider<LifecycleOwner>(
+              testLifecycleOwner: (owner) => owner.scope == 'app');
+
+      final vm = scope.viewModels<Test4ViewModel>(
+          viewModelProviderProducer: ViewModel.producer.byCurr);
+      Object? err;
+      try {
+        final vm2 = scope2.viewModels<Test4ViewModel>(
+            viewModelProviderProducer: producer);
+      } catch (error) {
+        err = error;
+      }
+      expect(err, isNotNull,
+          reason: 'viewModelProviderProducer conflict with already registered');
+      expect(vm.isCallCleared, isFalse);
+    });
+
+    test('.viewModels() producer conflict but but the same lifecycle', () {
+      /// 后一个的执行结果与注册的 使用了同一个ViewModelProvider 是被允许的
+      /// 虽然可以执行 但不推荐使用 非常容易混淆
+      ViewModel.factories.addFactory(Test5ViewModel.new);
+
+      final scope = LifecycleOwnerMock('scope');
+      scope.lifecycleRegistry.handleLifecycleEvent(LifecycleEvent.create);
+      scope.lifecycleRegistry.bindParentLifecycle(app.lifecycle);
+
+      ViewModelProvider producer(LifecycleOwner owner) =>
+          owner.findViewModelProvider<LifecycleOwner>(
+              testLifecycleOwner: (owner) => owner.scope == 'app');
+
+      final vm =
+          scope.viewModels<Test5ViewModel>(viewModelProviderProducer: producer);
+      Object? err;
+      try {
+        final vm2 = app.viewModels<Test5ViewModel>(
+            viewModelProviderProducer: ViewModel.producer.byCurr);
+      } catch (error) {
+        err = error;
+      }
+      expect(err, isNull,
+          reason:
+              'Conflict, but ultimately pointing to the same lifecycle is permitted');
+      expect(vm.isCallCleared, isFalse);
     });
   });
 }
