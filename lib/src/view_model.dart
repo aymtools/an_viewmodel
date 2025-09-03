@@ -143,11 +143,12 @@ typedef ViewModelFactory2<VM extends ViewModel> = VM Function(Lifecycle);
 /// 用来管理如何创建ViewModel
 class ViewModelProvider {
   final ViewModelStore _viewModelStore = ViewModelStore();
-  final Lifecycle _lifecycle;
+  final WeakReference<Lifecycle> _lifecycle;
   final Map<Type, Function> _factoryMap = HashMap();
 
-  ViewModelProvider(this._lifecycle) {
-    _lifecycle.addLifecycleObserver(LifecycleObserver.eventDestroy(() {
+  ViewModelProvider(Lifecycle lifecycle)
+      : _lifecycle = WeakReference(lifecycle) {
+    lifecycle.addLifecycleObserver(LifecycleObserver.eventDestroy(() {
       _viewModelStore.clear();
       _factoryMap.clear();
     }));
@@ -159,7 +160,7 @@ class ViewModelProvider {
 
   @visibleForTesting
   @protected
-  Lifecycle get lifecycle => _lifecycle;
+  Lifecycle get lifecycle => _lifecycle.target!;
 
   /// 使用当前的Provider获取或创建一个 ViewModel
   /// [lifecycle] 调用时的lifecycle 不一定是寄存的
@@ -168,7 +169,7 @@ class ViewModelProvider {
       {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) {
     var vmCache = _viewModelStore.get<VM>();
     if (vmCache != null) return vmCache;
-    VM? vm = ViewModelProvider.newInstanceViewModel(_lifecycle,
+    VM? vm = ViewModelProvider.newInstanceViewModel(this.lifecycle,
         factories: _factoryMap, factory: factory, factory2: factory2);
     if (vm != null) {
       _viewModelStore.put<VM>(vm);
@@ -191,7 +192,7 @@ class ViewModelProvider {
 
     var vmCache = _viewModelStore.get<VM>(vmType: vmType);
     if (vmCache != null) return vmCache;
-    VM? vm = ViewModelProvider.newInstanceViewModel(_lifecycle,
+    VM? vm = ViewModelProvider.newInstanceViewModel(this.lifecycle,
         factories: _factoryMap,
         factory: factory,
         factory2: factory2,
