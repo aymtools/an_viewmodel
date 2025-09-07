@@ -1,3 +1,7 @@
+## 3.4.0
+
+* Optimize the search efficiency of ViewModelProvider
+
 ## 3.3.0
 
 * Added support for specifying the type during creation to enable runtime ViewModel instantiation.
