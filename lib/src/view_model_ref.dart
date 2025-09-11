@@ -27,7 +27,7 @@ class _RefManager extends LifecycleEventObserver {
     }
   }
 
-  _check(Lifecycle willRemove) {
+  void _check(Lifecycle willRemove) {
     _users.remove(willRemove);
     if (_users.isEmpty) {
       _isDestroyed = true;
