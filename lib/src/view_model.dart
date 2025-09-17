@@ -64,7 +64,16 @@ extension ViewModelExt on ViewModel {
       _cancellable.makeCancellable(
           father: other, infectious: false, weakRef: weakRef);
 
+  /// 判断当前 viewmodel isCleared
   bool get isCleared => _cancellable.isUnavailable;
+
+  /// 使用宿主的lifecycle
+  T useHostLifecycle<T>({required T Function(Lifecycle) block}) {
+    if (isCleared) throw Exception('ViewModel is cleared');
+    final lifecycle = _lifecycle.target;
+    if (lifecycle == null) throw Exception('ViewModel is cleared');
+    return block(lifecycle);
+  }
 }
 
 extension _ViewModelClean on ViewModel {
