@@ -67,7 +67,8 @@ extension ViewModelExt on ViewModel {
   /// 判断当前 viewmodel isCleared
   bool get isCleared => _cancellable.isUnavailable;
 
-  /// 使用宿主的lifecycle
+  /// 使用宿主的[lifecycle]，
+  /// 推荐使用[lifecycle]后不要持有引用，用完即弃
   T useHostLifecycle<T>({required T Function(Lifecycle) block}) {
     if (isCleared) throw Exception('ViewModel is cleared');
     final lifecycle = _lifecycle.target;

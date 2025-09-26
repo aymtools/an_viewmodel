@@ -1,3 +1,7 @@
+## 3.5.0
+
+* Added ViewModel.useHostLifecycle
+
 ## 3.4.1
 
 * Code standardization
