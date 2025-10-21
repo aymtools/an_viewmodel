@@ -1,5 +1,9 @@
 ## 3.5.0
 
+*
+
+## 3.5.0
+
 * Added ViewModel.useHostLifecycle
 
 ## 3.4.1

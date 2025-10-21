@@ -38,21 +38,22 @@ to [anlifecycle](https://pub.dev/packages/anlifecycle) for guidance.
 ```dart
 
 class HomeViewModel with ViewModel {
-  final Lifecycle lifecycle;
-  final GlobalViewModel globalViewModel;
-  // 如果已经创建过 或者注册过factory 可直接使用
-  // late final GlobalViewModel globalViewModel = viewModels();
+  /// 可自动获取 当前scope 或者更上层scope 中的 ViewModel
+  late final GlobalViewModel globalViewModel = viewModels();
 
   late final ValueNotifier<int> counter = valueNotifier(0);
 
-  // 当前页面的停留时间
-  late final ValueNotifier<int> stayed = valueNotifierStream(
-      stream: Stream.periodic(const Duration(seconds: 1), (i) => i)
-          .bindLifecycle(lifecycle, repeatLastOnRestart: true),
-      initialData: 0);
+  /// 停留计时器
+  late final _stayedStream = useHostLifecycle(
+      block: (lifecycle) =>
+          Stream.periodic(const Duration(seconds: 1), (i) => i).bindLifecycle(
+              lifecycle,
+              repeatLastOnStateAtLeast: true,
+              state: LifecycleState.resumed)).repeatLatest();
 
-  // 通过传入的Lifecycle 获取全局的 GlobalViewModel
-  HomeViewModel(this.lifecycle) : globalViewModel = lifecycle.viewModelsByApp();
+  // 当前页面的停留时间
+  late final ValueNotifier<int> stayed =
+  valueNotifierStream(stream: _stayedStream, initialData: 0);
 
   void incrementCounter() {
     // 使用全局配置的步进
@@ -68,7 +69,7 @@ class HomeViewModelDemo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 使用当前提供的 factory 按需创建 ViewModel
-    final viewModel = context.viewModels(factory2: HomeViewModel.new);
+    final viewModel = context.viewModels(factory: HomeViewModel.new);
 
     // 如果之前已经提供过 factory 或者已经存在 ViewModel 的实例 可以直接使用
     // final viewModel = context.viewModels<HomeViewModel>();
@@ -82,14 +83,11 @@ class HomeViewModelDemo extends StatelessWidget {
     // 当还有引用时 下次获取依然是同一个 当没有任何引用的时候 会执行清理vm
     // final viewModel = context.viewModelsByRef<HomeViewModel>();
 
-    /// 同时使用当前 context 所在的lifecycle和viewmodel对象 来处理生命周期变化
-    // final viewModel = context.withLifecycleAndViewModelEffect(
-    //   factory2: HomeViewModel.new,
-    //   launchOnFirstStart: (lifecycle, vm) {
+    /// 可以配合 LifecycleEffect 用来触发vm的一些事件
+    // context.withLifecycleEffect(
+    //   launchOnFirstStart: (l) {
     //     print('launchOnFirstStart');
-    //   },
-    //   repeatOnResumed: (lifecycle, vm) {
-    //     print('repeatOnResumed');
+    //     vm.xxxx();
     //   },
     // );
 
@@ -135,20 +133,13 @@ class HomeViewModelDemo extends StatelessWidget {
   }
 }
 
-/// 模拟子控件  可以在 state中直接使用
-class HomeFloatingButton extends StatefulWidget {
+/// 模拟子控件中使用
+class HomeFloatingButton extends StatelessWidget {
   const HomeFloatingButton({super.key});
 
   @override
-  State<HomeFloatingButton> createState() => _HomeFloatingButtonState();
-}
-
-class _HomeFloatingButtonState extends State<HomeFloatingButton> {
-  //获取vm   可以在 state中直接使用
-  late final vm = viewModelsOfState<HomeViewModel>();
-
-  @override
   Widget build(BuildContext context) {
+    final vm = context.viewModels<HomeViewModel>();
     return FloatingActionButton(
       onPressed: vm.incrementCounter,
       tooltip: 'Increment',
