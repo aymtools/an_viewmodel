@@ -37,11 +37,26 @@ to [anlifecycle](https://pub.dev/packages/anlifecycle) for guidance.
 
 ```dart
 
+void main() {
+  /// 提前声明 GlobalViewModel 的创建方式
+  /// 并且存放于 app 全局
+  ViewModel.factories
+      .addFactory(GlobalViewModel.new, producer: ViewModel.producer.byApp);
+
+  runApp(const MyApp());
+}
+
+class GlobalViewModel with ViewModel {
+  final int step = 2;
+}
+
 class HomeViewModel with ViewModel {
   /// 可自动获取 当前scope 或者更上层scope 中的 ViewModel
   late final GlobalViewModel globalViewModel = viewModels();
 
   late final ValueNotifier<int> counter = valueNotifier(0);
+
+  int curr = 0;
 
   /// 停留计时器
   late final _stayedStream = useHostLifecycle(
@@ -49,7 +64,7 @@ class HomeViewModel with ViewModel {
           Stream.periodic(const Duration(seconds: 1), (i) => i).bindLifecycle(
               lifecycle,
               repeatLastOnStateAtLeast: true,
-              state: LifecycleState.resumed)).repeatLatest();
+              state: LifecycleState.resumed)).map((_) => curr++).repeatLatest();
 
   // 当前页面的停留时间
   late final ValueNotifier<int> stayed =
@@ -89,6 +104,10 @@ class HomeViewModelDemo extends StatelessWidget {
     //     print('launchOnFirstStart');
     //     vm.xxxx();
     //   },
+    //   repeatOnResumed: (l){
+    //     print('repeatOnResumed');
+    //     vm.xxxx();
+    //   }
     // );
 
     return Scaffold(

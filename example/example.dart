@@ -90,6 +90,10 @@ class HomeViewModelDemo extends StatelessWidget {
     //     print('launchOnFirstStart');
     //     vm.xxxx();
     //   },
+    //   repeatOnResumed: (l){
+    //     print('repeatOnResumed');
+    //     vm.xxxx();
+    //   }
     // );
 
     return Scaffold(
