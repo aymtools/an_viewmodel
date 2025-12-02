@@ -1,10 +1,9 @@
 import 'dart:async';
 
+import 'package:an_async_data/an_async_data.dart';
+import 'package:an_viewmodel/src/view_model.dart';
 import 'package:cancellable/cancellable.dart';
 import 'package:flutter/foundation.dart';
-
-import '../view_model.dart';
-import 'value_notifier_ext.dart';
 
 part 'vm_ext_advanced.dart';
 part 'vm_ext_merge.dart';

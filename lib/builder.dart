@@ -1,3 +1,3 @@
 library;
 
-export 'src/tools/value_notifier_builder.dart';
+export 'package:an_async_data/builder.dart';
