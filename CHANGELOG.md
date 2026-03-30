@@ -1,3 +1,7 @@
+## 3.7.0
+
+* Added ViewModelCallbacks to observe the ViewModel lifecycle.
+
 ## 3.6.0
 
 * AsyncData migrated to the [an_async_data](https://pub.dev/packages/an_async_data) package.

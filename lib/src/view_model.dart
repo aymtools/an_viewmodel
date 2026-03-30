@@ -6,8 +6,12 @@ import 'package:flutter/widgets.dart';
 import 'package:weak_collections/weak_collections.dart';
 
 part 'view_model_companion.dart';
+
 part 'view_model_core.dart';
+
 part 'view_model_tools.dart';
+
+part 'view_model_callback.dart';
 
 /// ViewModel基类
 abstract mixin class ViewModel {
@@ -77,16 +81,6 @@ extension ViewModelExt on ViewModel {
   }
 }
 
-extension _ViewModelClean on ViewModel {
-  // 执行清理
-  void clear() {
-    if (_cancellable.isUnavailable) return;
-    _cancellable.cancel();
-    onCleared();
-    _debugPrintViewModelCleared(this);
-  }
-}
-
 /// ViewModel的Store
 class ViewModelStore {
   final Map<Object, ViewModel> _mMap = HashMap();
@@ -98,7 +92,7 @@ class ViewModelStore {
     _mMap[vmType] = viewModel;
 
     if (oldViewModel != null) {
-      oldViewModel.clear();
+      _clearViewModel(oldViewModel);
     }
   }
 
@@ -123,7 +117,7 @@ class ViewModelStore {
     vmType ??= VM;
     Object? oldViewModel = _mMap.remove(vmType);
     if (oldViewModel is ViewModel) {
-      oldViewModel.clear();
+      _clearViewModel(oldViewModel);
     }
     return oldViewModel as VM?;
   }
@@ -137,7 +131,7 @@ class ViewModelStore {
   void clear() {
     if (_mMap.isNotEmpty) {
       for (ViewModel vm in [..._mMap.values]) {
-        vm.clear();
+        _clearViewModel(vm);
       }
       _mMap.clear();
     }
@@ -180,7 +174,10 @@ class ViewModelProvider {
     var vmCache = _viewModelStore.get<VM>();
     if (vmCache != null) return vmCache;
     VM? vm = ViewModelProvider.newInstanceViewModel(this.lifecycle,
-        factories: _factoryMap, factory: factory, factory2: factory2);
+        factories: _factoryMap,
+        factory: factory,
+        factory2: factory2,
+        provider: this);
     if (vm != null) {
       _viewModelStore.put<VM>(vm);
       return vm;
@@ -206,6 +203,7 @@ class ViewModelProvider {
         factories: _factoryMap,
         factory: factory,
         factory2: factory2,
+        provider: this,
         vmType: vmType);
     if (vm != null) {
       _viewModelStore.put<VM>(vm, vmType: vmType);
@@ -236,15 +234,16 @@ class ViewModelProvider {
 
   /// 使用提供的创建工厂来创建VM 对象
   /// [lifecycle] viewModel 所寄存的lifecycle
+  /// [provider] 为了保证旧版本的兼容性可以允许为空 目前只在[ViewModelCallbacks.instance]中使用
   static VM? newInstanceViewModel<VM extends ViewModel>(Lifecycle lifecycle,
       {Map<Type, Function>? factories,
       ViewModelFactory<VM>? factory,
       ViewModelFactory2<VM>? factory2,
+      ViewModelProvider? provider,
       Type? vmType}) {
     VM? result;
     result = factory?.call();
     result ??= factory2?.call(lifecycle);
-    _debugPrintViewModelCreated(result, lifecycle, factory, factory2);
     if (result == null && factories != null) {
       result = _newInstanceViewModel<VM>(factories, lifecycle, vmType);
     }
@@ -253,7 +252,9 @@ class ViewModelProvider {
 
     if (result != null) {
       result._lifecycle = WeakReference(lifecycle);
+      ViewModelCallbacks.instance._onInstantiated(result, provider, lifecycle);
       result.onCreate(lifecycle);
+      ViewModelCallbacks.instance._onCreated(result, provider, lifecycle);
     }
     return result;
   }
@@ -270,32 +271,15 @@ VM? _newInstanceViewModel<VM extends ViewModel>(
   }
   if (factory is ViewModelFactory<VM>) {
     vm = factory();
-    _debugPrintViewModelCreated(vm, lifecycle, factory, null);
   } else if (factory is ViewModelFactory2<VM>) {
     vm = factory(lifecycle);
-    _debugPrintViewModelCreated(vm, lifecycle, null, factory);
   }
   return vm;
 }
 
-void _debugPrintViewModelCreated(ViewModel? vm, Lifecycle lifecycle,
-    ViewModelFactory? factory, ViewModelFactory2? factory2) {
-  assert(() {
-    if (ViewModel.printLifecycle && vm != null) {
-      debugPrint('ViewModel: ${vm.runtimeType}:${vm.hashCode} Created '
-          'By ${lifecycle.owner.runtimeType}${lifecycle.owner.scope ?? ''}:${lifecycle.owner.hashCode}'
-          // 'use factory ${factory ?? factory2 ?? ''}'
-          '');
-    }
-    return true;
-  }());
-}
-
-void _debugPrintViewModelCleared(ViewModel vm) {
-  assert(() {
-    if (ViewModel.printLifecycle) {
-      debugPrint('ViewModel: ${vm.runtimeType}:${vm.hashCode} Cleared');
-    }
-    return true;
-  }());
+void _clearViewModel<VM extends ViewModel>(VM vm) {
+  if (vm._cancellable.isUnavailable) return;
+  vm._cancellable.cancel();
+  vm.onCleared();
+  ViewModelCallbacks.instance._onCleared(vm);
 }
