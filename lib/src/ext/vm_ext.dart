@@ -12,6 +12,7 @@ part 'vm_ext_merge.dart';
 part 'vm_stream_ext.dart';
 
 part 'vm_ext_async_notifier.dart';
+
 part 'vm_ext_async_notifier_s.dart';
 
 /// viewModel 销毁时 set value 不在发出通知
@@ -34,6 +35,7 @@ class _ValueNotifier<T> extends ValueNotifier<T> {
     if (_cancellable.isAvailable) {
       if (_value == newValue) {
         if (notifyWhenEquals) {
+          _value = newValue;
           super.notifyListeners();
         }
         return;
@@ -109,7 +111,6 @@ extension ViewModelValueNotifierExt on ViewModel {
   ValueNotifier<T> valueNotifier<T>(T value) {
     return _ValueNotifier(this, value);
   }
-
 }
 
 // extension ViewModelValueNotifierCallExt on ViewModel {
