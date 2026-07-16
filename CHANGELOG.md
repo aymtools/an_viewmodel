@@ -1,3 +1,12 @@
+## 3.8.0
+
+* `ViewModel.useHostLifecycle` now supports custom `onCleared` state handling.
+* **Deprecated**: Marked the `onCreate` lifecycle method as deprecated due to naming ambiguity (
+  users frequently confused whether the ViewModel was *actively creating* or *already created*). It
+  will be completely removed in a future major release.
+* **Migration Guide**: Please migrate your initialization logic from `onCreate` to the newly
+  introduced `onCreated` method.
+
 ## 3.7.0
 
 * Added ViewModelCallbacks to observe the ViewModel lifecycle.

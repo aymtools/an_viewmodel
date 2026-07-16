@@ -5,23 +5,30 @@ import 'package:cancellable/cancellable.dart';
 import 'package:flutter/widgets.dart';
 import 'package:weak_collections/weak_collections.dart';
 
+part 'view_model_callback.dart';
+
 part 'view_model_companion.dart';
 
 part 'view_model_core.dart';
 
 part 'view_model_tools.dart';
 
-part 'view_model_callback.dart';
-
 /// ViewModel基类
 abstract mixin class ViewModel {
   final Cancellable _cancellable = Cancellable();
-  late WeakReference<Lifecycle> _lifecycle;
+  WeakReference<Lifecycle>? _lifecycle;
+  WeakReference<Lifecycle Function()>? _hostLifecycle;
 
   /// 调用完构造函数之后调用 初始化创建
-  /// [lifecycle] 当前ViewModel所寄存的 lifecycle
+  /// [lifecycle] 当前ViewModel所寄存的 [lifecycle]
+  /// * 早于[onCreated]调用，由于所寄存的[lifecycle]会变动，创建后传入并不合适，后续如需使用当前寄存的[lifecycle]，请使用 [useHostLifecycle]
+  @Deprecated('use onCreated, will remove , v3.8.0')
   @protected
   void onCreate(Lifecycle lifecycle) {}
+
+  /// 调用完构造函数之后调用 实例已经完成初始化
+  @protected
+  void onCreated() {}
 
   /// 执行清理
   @protected
@@ -45,12 +52,20 @@ abstract mixin class ViewModel {
   static bool doNotAssertProviderProducer = false;
 
   /// 用来快速定位 viewModelProviderProducer 的提供者 保证唯一性 提升性能
-  static const ViewModelProviderProducerCompanion producer =
+  static const ViewModelProviderProducerCompanion producer = producers;
+
+  /// 用来快速定位 viewModelProviderProducer 的提供者 保证唯一性 提升性能
+  static const ViewModelProviderProducerCompanion producers =
       ViewModelProviderProducerCompanion._();
 
   /// 用来注册viewModel的 创建器 和默认寄存位置
   static const ViewModelFactoriesCompanion factories =
       ViewModelFactoriesCompanion._();
+}
+
+/// 稳定抛出ViewModel状态异常的错误
+Never _throwViewModelClearedError() {
+  throw StateError('ViewModel is cleared');
 }
 
 extension ViewModelExt on ViewModel {
@@ -73,10 +88,12 @@ extension ViewModelExt on ViewModel {
 
   /// 使用宿主的[lifecycle]，
   /// 推荐使用[lifecycle]后不要持有引用，用完即弃
-  T useHostLifecycle<T>({required T Function(Lifecycle) block}) {
-    if (isCleared) throw Exception('ViewModel is cleared');
-    final lifecycle = _lifecycle.target;
-    if (lifecycle == null) throw Exception('ViewModel is cleared');
+  T useHostLifecycle<T>(
+      {required T Function(Lifecycle) block,
+      T Function() onCleared = _throwViewModelClearedError}) {
+    if (isCleared) return onCleared();
+    final lifecycle = _hostLifecycle?.target?.call() ?? _lifecycle?.target;
+    if (lifecycle == null) return onCleared();
     return block(lifecycle);
   }
 }
@@ -136,6 +153,9 @@ class ViewModelStore {
       _mMap.clear();
     }
   }
+
+  /// 检查是否包含viewModle
+  bool containsValue(ViewModel vm) => _mMap.containsValue(vm);
 }
 
 /// ViewModel创建器1
@@ -165,6 +185,9 @@ class ViewModelProvider {
   @visibleForTesting
   @protected
   Lifecycle get lifecycle => _lifecycle.target!;
+
+  // 用来提供给viewModel的获取hostLifecycle
+  // Lifecycle _hostLifecycle() => _lifecycle.target!;
 
   /// 使用当前的Provider获取或创建一个 ViewModel
   /// [lifecycle] 调用时的lifecycle 不一定是寄存的
@@ -251,12 +274,49 @@ class ViewModelProvider {
         _ViewModelDefFactories._instance._factoryMap, lifecycle, vmType);
 
     if (result != null) {
-      result._lifecycle = WeakReference(lifecycle);
+      if (provider != null) {
+        result._lifecycle = WeakReference(lifecycle);
+      }
       ViewModelCallbacks.instance._onInstantiated(result, provider, lifecycle);
-      result.onCreate(lifecycle);
+      _safeCallViewModelMethod(
+          // ignore: deprecated_member_use_from_same_package
+          result, (vm) => vm.onCreate(lifecycle), 'onCreate');
+      _safeCallViewModelMethod(result, (vm) => vm.onCreated(), 'onCreated');
       ViewModelCallbacks.instance._onCreated(result, provider, lifecycle);
     }
     return result;
+  }
+
+  /// 替换 viewModel的 hostLifecycle 提供器
+  /// [vm] 必须为当前Provider创建的ViewModel
+  /// [newHostLifecycle] 函数自身必须是强引用 匿名函数会导致设置失效
+  @protected
+  void changeViewModelHostLifecycle(
+      ViewModel vm, Lifecycle Function() newHostLifecycle) {
+    if (_viewModelStore.containsValue(vm)) {
+      vm._hostLifecycle = WeakReference(newHostLifecycle);
+    }
+  }
+
+  /// 重置 viewModel的 hostLifecycle 提供器
+  /// [vm] 必须为当前Provider创建的ViewModel
+  @protected
+  void resetViewModelHostLifecycle(ViewModel vm) {
+    if (_viewModelStore.containsValue(vm)) vm._hostLifecycle = null;
+  }
+}
+
+void _safeCallViewModelMethod(
+    ViewModel viewModel, void Function(ViewModel) invoker, String methodName) {
+  try {
+    invoker(viewModel);
+  } catch (e, s) {
+    FlutterError.reportError(FlutterErrorDetails(
+      exception: e,
+      stack: s,
+      library: 'an_viewmodel',
+      context: ErrorDescription('while calling $methodName of $viewModel'),
+    ));
   }
 }
 
@@ -280,6 +340,7 @@ VM? _newInstanceViewModel<VM extends ViewModel>(
 void _clearViewModel<VM extends ViewModel>(VM vm) {
   if (vm._cancellable.isUnavailable) return;
   vm._cancellable.cancel();
-  vm.onCleared();
+  // vm.onCleared();
+  _safeCallViewModelMethod(vm, (vm) => vm.onCleared(), 'onCleared');
   ViewModelCallbacks.instance._onCleared(vm);
 }

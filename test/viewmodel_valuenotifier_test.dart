@@ -55,7 +55,7 @@ void main() {
     test('.valueNotifierAsyncFuture()', () async {
       final vm = app.viewModels<TestViewModel>();
       var futureCalled = false;
-      final valueNotifier = vm.valueNotifierAsyncFuture<int>(
+      final valueNotifier = vm.valueNotifierAsync<int>(
         future: Future<int>.delayed(const Duration(milliseconds: 100), () {
           futureCalled = true;
           return 42;
@@ -78,7 +78,7 @@ void main() {
     test('.valueNotifierAsyncStream()', () async {
       final vm = app.viewModels<TestViewModel>();
       var streamCalledCount = 0;
-      final valueNotifier = vm.valueNotifierAsyncStream<int>(
+      final valueNotifier = vm.valueNotifierAsync<int>(
         stream:
             Stream<int>.periodic(const Duration(milliseconds: 100), (count) {
           streamCalledCount++;
@@ -245,7 +245,7 @@ void main() {
     test('.valueNotifierStream()', () async {
       final vm = app.viewModels<TestViewModel>();
       var streamCalledCount = 0;
-      final valueNotifier = vm.valueNotifierStream<int>(
+      final valueNotifier = vm.valueNotifierAsyncV<int>(
         initialData: 0,
         stream:
             Stream<int>.periodic(const Duration(milliseconds: 100), (count) {
@@ -270,7 +270,7 @@ void main() {
     test('.valueNotifierFuture()', () async {
       final vm = app.viewModels<TestViewModel>();
       var futureCalled = false;
-      final valueNotifier = vm.valueNotifierFuture<int>(
+      final valueNotifier = vm.valueNotifierAsyncV<int>(
         initialData: 0,
         future: Future<int>.delayed(const Duration(milliseconds: 100), () {
           futureCalled = true;

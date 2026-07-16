@@ -54,7 +54,7 @@ class HomeViewModel with ViewModel {
 
   // 当前页面的停留时间
   late final ValueNotifier<int> stayed =
-      valueNotifierStream(stream: _stayedStream, initialData: 0);
+      valueNotifierAsyncV(stream: _stayedStream, initialData: 0);
 
   void incrementCounter() {
     // 使用全局配置的步进

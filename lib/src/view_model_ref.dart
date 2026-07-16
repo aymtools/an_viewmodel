@@ -6,24 +6,38 @@ import 'package:weak_collections/weak_collections.dart';
 
 import 'view_model.dart';
 
-class _RefManager extends LifecycleEventObserver {
+class _ViewModelRefProviderManagerLifecycleObserver
+    extends LifecycleEventObserver {
   bool _isDestroyed = false;
-  final Set<Lifecycle> _users = WeakHashSet();
-  final void Function() onDispose;
+  final WeakLinkedHashSet<Lifecycle> _users = WeakLinkedHashSet.identity();
+  final void Function(ViewModel?) onDispose;
+  final WeakReference<ViewModel> _vmRef;
 
-  _RefManager({required this.onDispose});
+  _ViewModelRefProviderManagerLifecycleObserver(
+      {required ViewModel vm, required this.onDispose})
+      : _vmRef = WeakReference(vm);
 
   void add(Lifecycle lifecycle) {
     if (_isDestroyed) return;
     if (lifecycle.currentLifecycleState > LifecycleState.destroyed) {
-      if (_users.add(lifecycle)) {
+      /// 将最后一次使用的生命周期 更新为最后一个
+      if (_users.isEmpty) {
+        /// 空的情况直接新增即可
+        lifecycle.addLifecycleObserver(this);
+      } else if (_users.last == lifecycle) {
+        // 如果是最后一个则无需任何操作
+        return;
+      } else if (_users.contains(lifecycle)) {
+        _users.remove(lifecycle);
+      } else {
         lifecycle.addLifecycleObserver(this);
       }
+      _users.add(lifecycle);
       return;
     }
     if (_users.isEmpty) {
       _isDestroyed = true;
-      onDispose();
+      onDispose(_vmRef.target);
     }
   }
 
@@ -31,7 +45,7 @@ class _RefManager extends LifecycleEventObserver {
     _users.remove(willRemove);
     if (_users.isEmpty) {
       _isDestroyed = true;
-      onDispose();
+      onDispose(_vmRef.target);
     }
   }
 
@@ -40,15 +54,19 @@ class _RefManager extends LifecycleEventObserver {
     super.onDestroy(owner);
     _check(owner.lifecycle);
   }
+
+  // 用来提供给viewModel的获取hostLifecycle
+  Lifecycle _hostLifecycle() => _users.last;
 }
 
 /// 对缓存式的ViewModel提供支持
 class RefViewModelProvider extends ViewModelProvider {
-  final Map<ViewModel, _RefManager> _cancellableMap = HashMap.identity();
+  final Map<ViewModel, _ViewModelRefProviderManagerLifecycleObserver>
+      _cancellableMap = HashMap.identity();
 
   RefViewModelProvider(Lifecycle lifecycle) : super(lifecycle) {
     lifecycle.addLifecycleObserver(
-        LifecycleObserver.eventCreate(_cancellableMap.clear));
+        LifecycleObserver.eventDestroy(_cancellableMap.clear));
   }
 
   @override
@@ -62,12 +80,21 @@ class RefViewModelProvider extends ViewModelProvider {
       Type? vmType}) {
     final vm = super.getOrCreateViewModel<VM>(lifecycle,
         factory: factory, factory2: factory2, vmType: vmType);
-    final _RefManager manager = _cancellableMap.putIfAbsent(
-        vm,
-        () => _RefManager(onDispose: () {
-              viewModelStore.remove<VM>();
-              _cancellableMap.remove(vm);
-            }));
+    final _ViewModelRefProviderManagerLifecycleObserver manager =
+        _cancellableMap.putIfAbsent(vm, () {
+      final manager = _ViewModelRefProviderManagerLifecycleObserver(
+        vm: vm,
+        onDispose: (vm) {
+          if (vm != null) {
+            resetViewModelHostLifecycle(vm);
+            _cancellableMap.remove(vm);
+          }
+          viewModelStore.remove<VM>(vmType: vmType);
+        },
+      );
+      changeViewModelHostLifecycle(vm, manager._hostLifecycle);
+      return manager;
+    });
     manager.add(lifecycle);
     return vm;
   }

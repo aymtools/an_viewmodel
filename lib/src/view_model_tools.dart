@@ -235,15 +235,15 @@ extension ViewModelsState<T extends StatefulWidget> on State<T> {
 extension ViewModelViewModelsExt on ViewModel {
   /// 可以从当前viewModel 继续查找可用的View Model
   VM viewModels<VM extends ViewModel>(
-      {ViewModelFactory<VM>? factory,
-      ViewModelFactory2<VM>? factory2,
-      ViewModelProvider Function(LifecycleOwner lifecycleOwner)?
-          viewModelProviderProducer}) {
-    return _lifecycle.target!.viewModels<VM>(
-        factory: factory,
-        factory2: factory2,
-        viewModelProviderProducer: viewModelProviderProducer);
-  }
+          {ViewModelFactory<VM>? factory,
+          ViewModelFactory2<VM>? factory2,
+          ViewModelProvider Function(LifecycleOwner lifecycleOwner)?
+              viewModelProviderProducer}) =>
+      useHostLifecycle(
+          block: (l) => l.viewModels<VM>(
+              factory: factory,
+              factory2: factory2,
+              viewModelProviderProducer: viewModelProviderProducer));
 
   VM viewModelsByRoute<VM extends ViewModel>(
       {ViewModelFactory<VM>? factory, ViewModelFactory2<VM>? factory2}) {

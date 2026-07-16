@@ -5,8 +5,8 @@ class TestViewModel with ViewModel {
   bool isCallCleared = false;
 
   @override
-  void onCreate(Lifecycle lifecycle) {
-    super.onCreate(lifecycle);
+  void onCreated() {
+    super.onCreated();
   }
 
   @override
@@ -19,8 +19,8 @@ class Test2ViewModel with ViewModel {
   bool isCallCleared = false;
 
   @override
-  void onCreate(Lifecycle lifecycle) {
-    super.onCreate(lifecycle);
+  void onCreated() {
+    super.onCreated();
   }
 
   @override
@@ -33,8 +33,8 @@ class Test3ViewModel with ViewModel {
   bool isCallCleared = false;
 
   @override
-  void onCreate(Lifecycle lifecycle) {
-    super.onCreate(lifecycle);
+  void onCreated() {
+    super.onCreated();
   }
 
   @override
@@ -47,8 +47,8 @@ class Test4ViewModel with ViewModel {
   bool isCallCleared = false;
 
   @override
-  void onCreate(Lifecycle lifecycle) {
-    super.onCreate(lifecycle);
+  void onCreated() {
+    super.onCreated();
   }
 
   @override
@@ -61,8 +61,8 @@ class Test5ViewModel with ViewModel {
   bool isCallCleared = false;
 
   @override
-  void onCreate(Lifecycle lifecycle) {
-    super.onCreate(lifecycle);
+  void onCreated() {
+    super.onCreated();
   }
 
   @override
@@ -75,8 +75,8 @@ class TestRefViewModel with ViewModel {
   bool isCallCleared = false;
 
   @override
-  void onCreate(Lifecycle lifecycle) {
-    super.onCreate(lifecycle);
+  void onCreated() {
+    super.onCreated();
   }
 
   @override
