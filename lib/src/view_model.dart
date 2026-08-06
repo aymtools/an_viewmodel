@@ -279,8 +279,10 @@ class ViewModelProvider {
       }
       ViewModelCallbacks.instance._onInstantiated(result, provider, lifecycle);
       _safeCallViewModelMethod(
+          result,
           // ignore: deprecated_member_use_from_same_package
-          result, (vm) => vm.onCreate(lifecycle), 'onCreate');
+          (vm) => vm.onCreate(lifecycle),
+          'onCreate');
       _safeCallViewModelMethod(result, (vm) => vm.onCreated(), 'onCreated');
       ViewModelCallbacks.instance._onCreated(result, provider, lifecycle);
     }
