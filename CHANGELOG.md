@@ -1,3 +1,7 @@
+## 3.8.1
+
+* Upgrading Dependencies.
+
 ## 3.8.0
 
 * `ViewModel.useHostLifecycle` now supports custom `onCleared` state handling.

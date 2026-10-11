@@ -16,7 +16,7 @@ extension ViewModelAsyncValueNotifierExt on ViewModel {
     _ValueNotifier<AsyncData<T>> notifier;
     if (initialData != null || initialAllowNull) {
       notifier = _ValueNotifier(
-          this, AsyncData<T>.value(initialData as T), notifyWhenEquals);
+          this, AsyncData<T>.data(initialData as T), notifyWhenEquals);
     } else if (error != null) {
       notifier = _ValueNotifier(
           this, AsyncData<T>.error(error, stackTrace), notifyWhenEquals);
@@ -26,10 +26,10 @@ extension ViewModelAsyncValueNotifierExt on ViewModel {
 
     future
         ?.bindCancellable(makeLiveCancellable(weakRef: false))
-        .then(notifier.toValue, onError: notifier.toError);
+        .then(notifier.toData, onError: notifier.toError);
 
     stream?.bindViewModel(this).listen(
-          notifier.toValue,
+          notifier.toData,
           onError: notifier.toError,
           cancelOnError: cancelOnError,
         );

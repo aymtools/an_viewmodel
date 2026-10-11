@@ -67,8 +67,8 @@ void main() {
 
       await Future<void>.delayed(const Duration(milliseconds: 200));
       expect(valueNotifier.value.isLoading, isFalse);
-      expect(valueNotifier.value.hasValue, isTrue);
-      expect(valueNotifier.value.value, 42);
+      expect(valueNotifier.value.hasData, isTrue);
+      expect(valueNotifier.value.data, 42);
       expect(futureCalled, isTrue);
 
       app.lifecycleRegistry.handleLifecycleEvent(LifecycleEvent.destroy);
@@ -91,20 +91,20 @@ void main() {
 
       await Future<void>.delayed(const Duration(milliseconds: 150));
       expect(valueNotifier.value.isLoading, isFalse);
-      expect(valueNotifier.value.hasValue, isTrue);
-      expect(valueNotifier.value.value, 0);
+      expect(valueNotifier.value.hasData, isTrue);
+      expect(valueNotifier.value.data, 0);
       expect(streamCalledCount, 1);
 
       await Future<void>.delayed(const Duration(milliseconds: 100));
-      expect(valueNotifier.value.value, 1);
+      expect(valueNotifier.value.data, 1);
       expect(streamCalledCount, 2);
 
       await Future<void>.delayed(const Duration(milliseconds: 100));
-      expect(valueNotifier.value.value, 2);
+      expect(valueNotifier.value.data, 2);
       expect(streamCalledCount, 3);
 
       await Future<void>.delayed(const Duration(milliseconds: 100));
-      expect(valueNotifier.value.value, 2);
+      expect(valueNotifier.value.data, 2);
       expect(streamCalledCount, 3);
 
       app.lifecycleRegistry.handleLifecycleEvent(LifecycleEvent.destroy);
@@ -202,7 +202,7 @@ void main() {
       expect(valueNotifier.value.hasData, isFalse);
       expect(valueNotifier.value.hasError, isTrue);
 
-      valueNotifier.value = AsyncData.value(1);
+      valueNotifier.value = AsyncData.data(1);
       expect(valueNotifier.value.isLoading, isFalse);
       expect(valueNotifier.value.hasData, isTrue);
       expect(valueNotifier.value.hasError, isFalse);
@@ -219,7 +219,7 @@ void main() {
       expect(valueNotifier.value.hasError, isTrue);
       expect(valueNotifier.dataOrNull, isNull);
 
-      valueNotifier.toValue(2);
+      valueNotifier.toData(2);
       expect(valueNotifier.value.isLoading, isFalse);
       expect(valueNotifier.value.hasData, isTrue);
       expect(valueNotifier.value.hasError, isFalse);
@@ -235,11 +235,11 @@ void main() {
       valueNotifier.addListener(() {
         notifyCount++;
       });
-      valueNotifier.toValue(2);
+      valueNotifier.toData(2);
       expect(notifyCount, 1);
-      valueNotifier.toValue(2);
+      valueNotifier.toData(2);
       expect(notifyCount, 2);
-      valueNotifier.toValue(1);
+      valueNotifier.toData(1);
       expect(notifyCount, 3);
     });
     test('.valueNotifierStream()', () async {
